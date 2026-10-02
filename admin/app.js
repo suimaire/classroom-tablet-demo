@@ -1,4 +1,4 @@
-import {CloudAPI,friendly} from './api.js';
+import {CloudAPI,friendly} from './api.js?v=20261002-password-1';
 import {h,uuid,student,validateRoster,rosterFile,planImport,blankLayout,fromSnapshot,validateLayout,parserCourse,seatFile,portrait,csvEncode,makeWorkbook,XLSX_MIME,makeLayoutWorkbook} from './model.js';
 const api=new CloudAPI(),app=document.querySelector('#app'),dialog=document.querySelector('#dialog');
 let courses=[],course=null,snapshot=null,roster=[],photos=[],queue=[],audit=[],tab='class',busy=false,loading=false,generation=0,lastSync='',draft=null,email='',pendingRecord=null,draftSubmission=null;
