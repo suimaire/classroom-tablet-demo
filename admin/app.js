@@ -1,5 +1,5 @@
 import {mountClassManagement} from './class-management.js?v=20261002-classes-1';
-import {mountPhotoSheet} from './photo-sheet.js?v=20261002-photosheet-1';
+import {mountPhotoSheet} from './photo-sheet.js?v=20261002-auto-1';
 import {mountTeacherAccounts} from './teacher-accounts.js?v=20261002-teachers-1';
 import {safeReviewPayload} from './submission-safety.js?v=20261002-students-1';
 import {mountStudentRepresentatives} from './student-representatives.js?v=20261002-students-1';

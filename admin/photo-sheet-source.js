@@ -1,3 +1,4 @@
+import {collectPhotoGeometry} from './photo-sheet-detect.js?v=20261002-auto-1';
 import {sheetFileKind,cropPixels} from './photo-sheet-core.js';
 import {LocalPdfBinaryDataFactory} from './pdf-assets.js';
 const MAX_EDGE=3600,MAX_PIXELS=32000000;
@@ -24,7 +25,7 @@ export async function loadSheetSource(file,pageNumber=1){
     const page=await doc.getPage(pageNumber),base=page.getViewport({scale:1}),scale=Math.min(3,MAX_EDGE/Math.max(base.width,base.height)),viewport=page.getViewport({scale});
     if(!Number.isFinite(viewport.width)||!Number.isFinite(viewport.height)||viewport.width<1||viewport.height<1||viewport.width*viewport.height>MAX_PIXELS)throw Error('PDF 페이지 크기가 너무 큽니다.');
     canvas=canvasFor(Math.ceil(viewport.width),Math.ceil(viewport.height));await page.render({canvasContext:canvas.getContext('2d'),viewport,background:'#ffffff'}).promise;
-    const pages=doc.numPages;await task.destroy();return {canvas,width:canvas.width,height:canvas.height,page:pageNumber,pages,close(){canvas.width=canvas.height=1;}};
+    let geometry=null;try{geometry=collectPhotoGeometry(await page.getOperatorList(),pdf.OPS,base,(await page.getTextContent()).items);}catch{/* Unsupported structure retains manual cropping. */}const pages=doc.numPages;await task.destroy();return {canvas,width:canvas.width,height:canvas.height,page:pageNumber,pages,geometry,close(){canvas.width=canvas.height=1;if(geometry){geometry.labels.length=0;geometry.images.length=0;geometry.lines.length=0;}}};
   }catch(e){canvas&&(canvas.width=canvas.height=1);await task.destroy();throw Error(e.name==='PasswordException'?'암호가 걸린 PDF는 지원하지 않습니다. 잠금을 해제한 사본을 직접 준비해 주세요.':`PDF를 열지 못했습니다. ${e.message}`);}
 }
 export function cropPortrait(source,region){
