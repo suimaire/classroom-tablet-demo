@@ -104,9 +104,9 @@ export function validatePdfDraft(d, context) { const errors = [], seen = new Set
 export async function loadLocalPdf(bytes) {
     if (bytes.byteLength > 15 * 1024 * 1024)
         throw Error('PDF는 15MB 이하만 지원합니다.');
-    const pdf = await import('./pdf.mjs');
-    pdf.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.mjs', import.meta.url).href;
-    const task = pdf.getDocument({ data: bytes, BinaryDataFactory: LocalPdfBinaryDataFactory, useWorkerFetch: false, isEvalSupported: false, enableXfa: false, disableAutoFetch: true, disableStream: true, cMapUrl: new URL('./', import.meta.url).href, cMapPacked: true, standardFontDataUrl: new URL('./', import.meta.url).href, wasmUrl: new URL('./', import.meta.url).href });
+    const pdf = await import('../pdf.mjs');
+    pdf.GlobalWorkerOptions.workerSrc = new URL('../pdf.worker.mjs', import.meta.url).href;
+    const task = pdf.getDocument({ data: bytes, BinaryDataFactory: LocalPdfBinaryDataFactory, useWorkerFetch: false, isEvalSupported: false, enableXfa: false, disableAutoFetch: true, disableStream: true, cMapUrl: new URL('../', import.meta.url).href, cMapPacked: true, standardFontDataUrl: new URL('../', import.meta.url).href, wasmUrl: new URL('../', import.meta.url).href });
     try {
         const doc = await task.promise;
         if (doc.numPages !== 1)
