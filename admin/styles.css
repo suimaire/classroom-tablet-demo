@@ -2,9 +2,9 @@
 .busy button,.busy input[type=file]{cursor:wait}.seat small{display:block}.seat-grid{grid-auto-rows:minmax(110px,auto)}
 /* Classroom cards: readable full names, text left, portrait right. */
 .classroom-panel .seat-grid{min-width:0;width:100%;gap:7px;grid-auto-rows:minmax(110px,auto)}
-.classroom-panel .seat{gap:7px;padding:8px;align-items:center;min-height:110px}
+.classroom-panel .seat{gap:6px;padding:6px;align-items:center;min-height:110px}
 .classroom-panel .seat .identity{order:0;min-width:0;line-height:1.3}
-.classroom-panel .seat .portrait{order:1;width:34px;height:46px;flex:0 0 34px}
+.classroom-panel .seat .portrait{order:1;width:52px;height:70px;flex:0 0 52px}
 .classroom-panel .identity b{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:normal;font-size:13px;line-height:1.25;min-height:2.5em;margin:3px 0}
 .classroom-panel .identity small{font-size:10px;line-height:1.3;overflow-wrap:anywhere}
 .classroom-panel .identity .seat-score{white-space:nowrap;font-size:10px;margin-top:2px}
@@ -28,5 +28,5 @@
 .teacher-view .board{padding:6px;margin-top:10px}
 .teacher-view>#content>.notice{font-size:11px;padding:7px 10px;margin:6px 0}
 .teacher-view footer{font-size:10px;margin-top:8px}
-@media(max-width:750px){.teacher-view{padding:10px 8px}.teacher-view>header .toolbar{margin:0}.teacher-view>.stats{gap:12px}.teacher-view .classroom-panel{padding:9px}.classroom-panel .seat{padding:7px}.classroom-panel .identity b{font-size:13px}.classroom-panel .seat .portrait{width:32px;height:44px;flex-basis:32px}}
+@media(max-width:750px){.teacher-view{padding:10px 8px}.teacher-view>header .toolbar{margin:0}.teacher-view>.stats{gap:12px}.teacher-view .classroom-panel{padding:9px}.classroom-panel .seat{padding:6px}.classroom-panel .identity b{font-size:13px}.classroom-panel .seat .portrait{width:48px;height:64px;flex-basis:48px}}
 a.button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:9px;text-decoration:none;cursor:pointer}a.button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}a.button:focus-visible{outline:3px solid #3394bb;outline-offset:2px}
