@@ -1,0 +1,5 @@
+// Revalidate legacy stored review payloads before interpolating into editor markup.
+export function safeReviewPayload(p){
+ if(!p||typeof p!=='object'||Array.isArray(p)||Object.keys(p).some(k=>!['rows','cols','boardSide','cells'].includes(k))||!Number.isInteger(p.rows)||p.rows<1||p.rows>30||!Number.isInteger(p.cols)||p.cols<1||p.cols>30||!['top','bottom'].includes(p.boardSide)||!Array.isArray(p.cells)||p.cells.length>900)throw Error('안전한 자리표 형식이 아닙니다. 이 제출물을 반려하고 다시 제출하도록 안내하세요.');
+ const seen=new Set();return {rows:p.rows,cols:p.cols,boardSide:p.boardSide,cells:p.cells.map(c=>{if(!c||typeof c!=='object'||Array.isArray(c)||Object.keys(c).some(k=>!['row','col','kind','studentNumber'].includes(k))||!Number.isInteger(c.row)||c.row<1||c.row>p.rows||!Number.isInteger(c.col)||c.col<1||c.col>p.cols||!['desk','aisle','void'].includes(c.kind)||typeof(c.studentNumber??'')!=='string'||!/^\d{0,5}$/.test(c.studentNumber??'')||seen.has(c.row+':'+c.col))throw Error('안전한 자리표 형식이 아닙니다. 이 제출물을 반려하고 다시 제출하도록 안내하세요.');seen.add(c.row+':'+c.col);return {row:c.row,col:c.col,kind:c.kind,studentNumber:c.studentNumber??''};})};
+}
