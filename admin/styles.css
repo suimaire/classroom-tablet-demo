@@ -30,3 +30,5 @@
 .teacher-view footer{font-size:10px;margin-top:8px}
 @media(max-width:750px){.teacher-view{padding:10px 8px}.teacher-view>header .toolbar{margin:0}.teacher-view>.stats{gap:12px}.teacher-view .classroom-panel{padding:9px}.classroom-panel .seat{padding:6px}.classroom-panel .identity b{font-size:13px}.classroom-panel .seat .portrait{width:48px;height:64px;flex-basis:48px}}
 a.button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:9px;text-decoration:none;cursor:pointer}a.button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}a.button:focus-visible{outline:3px solid #3394bb;outline-offset:2px}
+
+.teacher-course-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:16px 0}.teacher-course-list fieldset{min-width:0;border:1px solid var(--line);border-radius:10px;padding:12px}.teacher-course-list legend{font-weight:700}.teacher-list .student-row{flex-wrap:wrap;overflow-wrap:anywhere}[data-teacher-panel] input[type=email]{max-width:100%}[data-teacher-panel] [data-status]{white-space:pre-wrap}
