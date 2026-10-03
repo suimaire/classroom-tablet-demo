@@ -1,4 +1,4 @@
-import {createSchoolImportUI} from './school-import-ui.js?v=20261004-footer-1';
+import {createSchoolImportUI} from './school-import-ui.js?v=20261004-flow-1';
 import {mountClassManagement} from './class-management.js?v=20261002-classes-1';
 import {mountPhotoSheet} from './photo-sheet.js?v=20261002-auto-1';
 import {mountTeacherAccounts} from './teacher-accounts.js?v=20261002-teachers-1';
@@ -57,5 +57,23 @@ function classManagementView(){const root=q('#content'),id=course.id,g=generatio
 
 async function refreshCourseList(){const g=generation,id=course?.id;const next=await api.rpc('hafs_my_courses');if(g!==generation||course?.id!==id)return;const selected=next.find(c=>c.id===id);if(!selected){await signout('학급 접근 권한을 확인할 수 없어 로그아웃했습니다.');return;}courses=next;course=selected;const picker=q('#course');if(picker)picker.innerHTML=courses.map(c=>`<option value="${h(c.id)}" ${c.id===id?'selected':''}>${h(c.name)} · ${c.role==='admin'?'관리자':'교사'}</option>`).join('');}
 
-function schoolImportView(){if(!admin())return;schoolImportUI??=createSchoolImportUI({rpc:(name,args)=>api.rpc(name,args),runWrite:fn=>act(fn)});schoolImportUI.attach(q('#content'));}
+function schoolImportView(){if(!admin())return;schoolImportUI??=createSchoolImportUI({rpc:(name,args)=>api.rpc(name,args),runWrite:fn=>act(async()=>{try{await fn();}finally{await syncSchoolImportViews();}})});schoolImportUI.attach(q('#content'));}
 window.addEventListener('beforeunload',e=>{if(schoolImportUI?.hasDraft()){e.preventDefault();e.returnValue='';}});
+
+async function syncSchoolImportViews(){
+ if(!api.access||!course)return;
+ const g=generation,id=course.id;
+ // Invalidate stale data before reads so an unsuccessful refresh cannot expose old counts.
+ snapshot=null;roster=[];photos=[];queue=[];audit=[];historyData=null;
+ try{
+  await refreshCourseList();
+  if(g!==generation||course?.id!==id||!api.access)return;
+  await refresh(true);
+  if(g===generation&&course?.id===id&&!snapshot)throw Error('현재 학급 자료를 아직 불러오지 못했습니다.');
+ }catch(error){
+  if(g!==generation||course?.id!==id)return;
+  render();
+  if(tab==='school'&&schoolImportUI){const progress=document.createElement('section');app.querySelector('main')?.append(progress);schoolImportUI.attach(progress);}
+  throw Error('등록 진행 결과는 유지됩니다. 현재 학급 화면 갱신에 실패했으니 다시 불러오기를 눌러 주세요. '+friendly(error));
+ }
+}

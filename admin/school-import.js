@@ -14,7 +14,11 @@ export function createSchoolImport({rpc,newId=()=>crypto.randomUUID(),onChange=(
  return {get entries(){return entries;},get busy(){return busy;},get pending(){return entries.some(e=>e.status==='unknown'||e.status==='creating');},
  stop(){stopped=true;emit();},
  clear(){if(busy||this.pending)throw Error('결과 확인을 먼저 완료하세요.');entries=[];emit();},
- async prepare(groups,targets){if(busy||this.pending)throw Error('진행 중인 작업 결과를 먼저 확인하세요.');busy=true;entries=[];emit();try{
+ async prepare(groups,targets){if(busy||this.pending)throw Error('진행 중인 작업 결과를 먼저 확인하세요.');
+ if(!Array.isArray(groups)||!groups.length||!Array.isArray(targets)||targets.length!==groups.length)throw Error('분류한 모든 반의 등록 대상을 확인하세요.');
+ const missing=groups.filter((g,i)=>{const t=targets[i];return !t||typeof t!=='object'||(t.create?!t.scopeId:!t.courseId);});
+ if(missing.length)throw Error(`등록 대상 선택 필요: ${missing.map(g=>`${g.grade}학년 ${g.classNumber}${g.section}반`).join(', ')}`);
+ busy=true;entries=[];emit();try{
  const catalog=await rpc('hafs_my_courses'),scopes=targets.some(t=>t.create)?await rpc('hafs_class_creation_options'):[];
  const used=new Set(),quota=new Map();const prepared=[];
  for(let i=0;i<groups.length;i++){const group=groups[i],target=targets[i];if(!target)throw Error('모든 학급의 대상을 선택하세요.');let e={group,target,status:'ready',error:'',requestId:newId()};
