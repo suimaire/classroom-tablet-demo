@@ -6,11 +6,45 @@ export const MAX_SCHOOL_STUDENTS = 1200;
 // Repeated class blocks: titles, not student ID prefixes, define A/B sections.
 export function parseSchoolBlocks(rows, context) {
   const groups = [], seen = new Set();
-  let current = null, header = false, total = 0, trackSeen = false, summary = false, summaryCounts = false;
+  let current = null, header = false, total = 0, trackSeen = false, summary = false, summaryCounts = false, footer = null;
   for (const [i, raw] of rows.entries()) {
     const isFormula = v => v && typeof v === 'object' && v._schoolFormulaCell === true;
     const literals = raw.map(v => isFormula(v) ? '' : String(v ?? '').trim());
     const filledLiterals = literals.filter(Boolean);
+    const present = value => isFormula(value) || String(value ?? '').trim() !== '';
+    if (footer) {
+      const error = message => {throw Error(`${i+1}행: 학교 집계표 ${message}`);};
+      if (footer.done) {
+        if (raw.some(present)) error('뒤에는 학생·학급·추가 자료를 둘 수 없습니다.');
+        continue;
+      }
+      if (raw.slice(5).some(present)) error('는 A~E열만 사용할 수 있습니다.');
+      if (isFormula(raw[0])) error(`학년·총인원 라벨에 수식을 사용할 수 없습니다 (${raw[0].address}).`);
+      const gradeLabel = literals[0]?.match(/^([1-9]\d*)학년$/), isTotal = literals[0] === '총인원';
+      if (!gradeLabel && !isTotal) error('의 학년 또는 총인원 행을 확인하세요.');
+      const grade = gradeLabel ? Number(gradeLabel[1]) : null;
+      if (grade !== null && (!footer.expected.has(grade) || footer.seen.has(grade))) error('의 학년이 명단에 없거나 중복되었습니다.');
+      if (isTotal && footer.seen.size !== footer.expected.size) error('에서 학년별 행이 누락되었습니다.');
+      for (let column=1;column<=3;column++) {
+        if (!isFormula(raw[column]) && !/^(?:0|[1-9]\d*)$/.test(literals[column] ?? '')) error('B~D열에는 비음수 정수 또는 집계 수식만 둘 수 있습니다.');
+      }
+      const note = literals[4] ?? '';
+      const gradeNote = /^휴학생\s+\d+명\s*\(남\s*:\s*\d+\s*,\s*여\s*:\s*\d+\)$/;
+      const totalNote = /^\d{4}\s+휴학생\s+\d+명\s*\/\s*남\s*:\s*\d+명\s*,\s*여\s*:\s*\d+명$/;
+      if (isFormula(raw[4]) || note && !(isTotal ? totalNote : gradeNote).test(note)) error('E열에는 확인된 휴학생 집계 문구만 둘 수 있습니다.');
+      if (isTotal) footer.done = true; else footer.seen.add(grade);
+      footer.rows++;continue;
+    }
+    const footerHeader = ['', '남', '여', '합', ''];
+    if (footerHeader.every((value,column)=>isFormula(raw[column])||(literals[column]??'')===value) && raw.some(isFormula)) {
+      const cell = raw.find(isFormula);
+      throw Error(`${cell.row}행 ${cell.column}열 (${cell.address}): 학교 집계표 헤더는 수식이 아닌 고정된 라벨이어야 합니다.`);
+    }
+    if (footerHeader.every((value,column)=>!isFormula(raw[column])&&(literals[column]??'')===value) && !raw.slice(5).some(present)) {
+      if (!current || !header || !current.students.length) throw Error(`${i+1}행: 학교 집계표 앞의 학급 명단이 완성되지 않았습니다.`);
+      footer = {expected:new Set(groups.map(g=>g.grade)),seen:new Set(),done:false,rows:1,startRow:i+1};
+      continue;
+    }
     const summaryToken = v => /^(?:(?:남|여|총원|합계)\s*[:：]?\s*)?(?:\d+\s*명?)?$/.test(v);
     const summaryLabelColumn = literals.findIndex(v => /^(남|여|총원|합계)/.test(v));
     const summaryRow = header && current?.students.length && /^(남|여|총원|합계)/.test(filledLiterals[0] ?? '') && filledLiterals.every(summaryToken) && !raw.some((v,column) => isFormula(v) && column <= summaryLabelColumn);
@@ -49,7 +83,8 @@ export function parseSchoolBlocks(rows, context) {
     if (++total > MAX_SCHOOL_STUDENTS) throw Error('전교 명렬은 1200명까지 등록할 수 있습니다.');
   }
   if (!total || !header || !current.students.length) throw Error('유효한 학생 명단이 없습니다.');
-  return {total, groups};
+  if (footer && !footer.done) throw Error(`${footer.startRow}행: 학교 집계표에 모든 학년별 행과 마지막 총인원 행이 필요합니다.`);
+  return {total, groups, excludedSummaryRows:footer?.rows ?? 0};
 }
 // Mapping contains exact header labels chosen by the user, never inferred from IDs.
 export function groupSchoolRoster(rows, mapping, context) {

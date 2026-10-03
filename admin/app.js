@@ -1,4 +1,4 @@
-import {createSchoolImportUI} from './school-import-ui.js?v=20261004-formula-1';
+import {createSchoolImportUI} from './school-import-ui.js?v=20261004-footer-1';
 import {mountClassManagement} from './class-management.js?v=20261002-classes-1';
 import {mountPhotoSheet} from './photo-sheet.js?v=20261002-auto-1';
 import {mountTeacherAccounts} from './teacher-accounts.js?v=20261002-teachers-1';
