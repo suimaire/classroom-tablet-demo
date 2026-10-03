@@ -1,11 +1,12 @@
+import {chooseRosterSheet} from './sheet-selection.js?v=20261003-school-1';
 import {parseRoster,csvEncode,validateRules} from './core.js?v=20261002-complete-2';
-import {importRosterXlsx,makeWorkbook,XLSX_MIME,importLayoutXlsx,makeLayoutWorkbook} from './excel.js?v=20261002-complete-2';
+import {importRosterXlsx,makeWorkbook,XLSX_MIME,importLayoutXlsx,makeLayoutWorkbook} from './excel.js?v=20261003-school-1';
 export {csvEncode,makeWorkbook,XLSX_MIME,makeLayoutWorkbook};
 export const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const uuid=()=>crypto.randomUUID();
 export function student(number,name){number=String(number).trim();name=String(name).trim();if(!/^[A-Za-z0-9_-]{1,30}$/.test(number))throw Error('학번은 영문·숫자·_·- 1~30자로 입력하세요.');if(!name||name.length>50)throw Error('이름은 1~50자로 입력하세요.');return {number,name};}
 export function validateRoster(rows){if(!Array.isArray(rows)||rows.length>500)throw Error('한 반에 500명 이하만 저장할 수 있습니다.');const nums=new Set(),ids=new Set();return rows.map(r=>{const clean=student(r.number,r.name);if(!r.id||nums.has(clean.number)||ids.has(r.id))throw Error('중복 학번 또는 학생이 있습니다.');nums.add(clean.number);ids.add(r.id);return {id:r.id,...clean};});}
-export async function rosterFile(file){if(file.size>5*1024*1024)throw Error('명렬 파일은 5MB 이하만 열 수 있습니다.');if(/\.xlsx$/i.test(file.name))return importRosterXlsx(new Uint8Array(await file.arrayBuffer()));if(!/\.csv$/i.test(file.name))throw Error('CSV 또는 XLSX 양식을 사용하세요.');return parseRoster(await file.text());}
+export async function rosterFile(file){if(file.size>5*1024*1024)throw Error('명렬 파일은 5MB 이하만 열 수 있습니다.');if(/\.xlsx$/i.test(file.name)){const data=new Uint8Array(await file.arrayBuffer());return importRosterXlsx(data,await chooseRosterSheet(data));}if(!/\.csv$/i.test(file.name))throw Error('CSV 또는 XLSX 양식을 사용하세요.');return parseRoster(await file.text());}
 export function planImport(existing,rows){const active=existing.filter(x=>x.active),all=[...active],added=[],same=[],conflicts=[];const inputs=new Set();for(const r of rows){if(inputs.has(r.number))throw Error('중복 학번이 있습니다.');inputs.add(r.number);const found=active.find(x=>x.number===r.number);if(found){if(found.name===r.name)same.push(found);else conflicts.push({...r,previous:found.name});}else{const old=existing.find(x=>!x.active&&x.number===r.number);if(old)conflicts.push({...r,previous:old.name,inactive:true});else{const n={id:uuid(),...r,active:true};all.push(n);added.push(n);}}}return {all,added,same,conflicts};}
 export function blankLayout(rows=4,cols=8){return {rows,cols,boardSide:'bottom',cells:Array.from({length:rows*cols},(_,i)=>({row:Math.floor(i/cols)+1,col:i%cols+1,kind:'desk',studentNumber:''}))};}
 export function fromSnapshot(s){return {...s.layout,cells:s.layout.cells.map(c=>({row:c.row,col:c.col,kind:c.kind,studentNumber:s.students.find(x=>x.id===c.studentId)?.number??''}))};}

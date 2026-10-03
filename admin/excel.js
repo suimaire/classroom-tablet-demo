@@ -32,24 +32,34 @@ export function makeWorkbook(kind, rows, c) { const wb = utils.book_new(), ws = 
     }
 } utils.book_append_sheet(wb, ws, kind === 'roster' ? '명렬' : '자리표'); if (kind === 'seats' && c)
     utils.book_append_sheet(wb, utils.aoa_to_sheet([['key', 'value'], ['schemaVersion', '1'], ['courseId', c.id], ['baseVersion', String(c.version)], ['fingerprint', fingerprint(c)]]), '_meta'); return new Uint8Array(write(wb, { bookType: 'xlsx', type: 'array', compression: true })); }
-function open(data, kind) {
+function open(data, kind, sheetName) {
     inspectZip(data);
     let wb;
+    if (kind === 'school' || kind === 'roster') {
+        const sheets = listRosterSheets(data), visible = sheets.filter(s => !s.hidden);
+        if (!sheetName && sheets.length === 1 && visible.length === 1) sheetName = visible[0].name;
+        assert(sheets.some(s => s.name === sheetName && !s.hidden), '가져올 표시 시트를 선택하세요.');
+    }
     try {
-        wb = read(data, { type: 'array', cellFormula: true, cellDates: false, sheetRows: 902 });
+        wb = read(data, { type: 'array', cellFormula: true, cellDates: false, ...((kind === 'school' || kind === 'roster') ? {sheets:[sheetName]} : {}), sheetRows: kind === 'school' ? 10002 : 902 });
     }
     catch {
         throw Error('XLSX 파일을 읽을 수 없습니다. 암호 없이 저장한 .xlsx 양식을 사용하세요.');
     }
-    const name = kind === 'roster' ? '명렬' : '자리표';
+    const name = kind === 'school' || kind === 'roster' ? sheetName : '자리표';
     assert(wb.SheetNames.includes(name), `시트 이름은 ${name}이어야 합니다. 앱의 XLSX 양식을 사용하세요.`);
-    assert(wb.SheetNames.every(n => n === name || (kind === 'seats' && n === '_meta')), '지원하지 않는 추가 시트가 있습니다.');
+    if (kind !== 'school' && kind !== 'roster') assert(wb.SheetNames.every(n => n === name || (kind === 'seats' && n === '_meta')), '지원하지 않는 추가 시트가 있습니다.');
     for (const sheet of Object.values(wb.Sheets)) {
-        assert(!sheet['!merges']?.length, '병합 셀은 지원하지 않습니다.');
+        if (kind !== 'school') assert(!sheet['!merges']?.length, '병합 셀은 지원하지 않습니다.');
+        else for (const merge of sheet['!merges'] ?? []) {
+            const title = sheet[utils.encode_cell(merge.s)]?.v;
+            assert(merge.s.r === merge.e.r && typeof title === 'string' && (/^\s*\d+학년\s*\d+[A-Za-z0-9]*반(?:\s|$)/.test(title) || /^(?:남|여|총원|합계)/.test(title) || /트랙|track/i.test(title)), '반 제목·트랙 설명·집계의 가로 병합만 지원합니다.');
+        }
         const ref = sheet['!fullref'] || sheet['!ref'];
         if (ref) {
             const range = utils.decode_range(ref);
-            assert(range.e.r <= 900 && range.e.c <= 10, 'XLSX는 901행·11열 이내로 작성하세요.');
+            const maxRows = kind === 'school' ? 10000 : 900;
+            assert(range.e.r <= maxRows && range.e.c <= 10, `XLSX는 헤더 포함 ${maxRows + 1}행·11열 이내로 작성하세요.`);
         }
         for (const [key, cell] of Object.entries(sheet)) {
             if (key.startsWith('!'))
@@ -59,13 +69,14 @@ function open(data, kind) {
         }
     }
     const rows = utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: false, defval: '', blankrows: false });
+    if (kind === 'school') return { wb, rows };
     const expected = kind === 'roster' ? ['studentNumber', 'name'] : rows[0]?.includes('kind') ? ['row', 'col', 'kind', 'studentNumber'] : ['row', 'col', 'studentNumber'];
     assert(rows[0]?.join(',') === expected.join(','), 'XLSX 헤더가 양식과 다릅니다.');
     assert(rows.every(r => r.length === expected.length), 'XLSX 열 수가 양식과 다릅니다.');
     const csv = rows.map(r => r.map(x => '"' + String(x).replaceAll('"', '""') + '"').join(',')).join('\n');
     return { wb, csv, rows };
 }
-export function importRosterXlsx(data) { return parseRoster(open(data, 'roster').csv); }
+export function importRosterXlsx(data, sheetName) { return parseRoster(open(data, 'roster', sheetName).csv); }
 export function importSeatsXlsx(data, c) { return importLayoutXlsx(data, c).seats; }
 function readLayoutWorkbook(data) {
     const { wb, csv, rows } = open(data, 'seats');
@@ -113,4 +124,12 @@ export function makeLayoutWorkbook(c, layout = layoutOf(c)) {
     utils.book_append_sheet(wb, ws, '자리표');
     utils.book_append_sheet(wb, utils.aoa_to_sheet([['key', 'value'], ['schemaVersion', '2'], ['courseId', c.id], ['baseVersion', String(c.version)], ['fingerprint', fingerprint(c)], ['rows', String(layout.rows)], ['cols', String(layout.cols)], ['boardSide', layout.boardSide]]), '_meta');
     return new Uint8Array(write(wb, { bookType: 'xlsx', type: 'array', compression: true }));
+}
+
+// School-wide input is separately mapped and validated; never use the class parser.
+export function readSchoolRosterXlsx(data, sheetName) { return open(data, 'school', sheetName).rows; }
+export function listRosterSheets(data) {
+    inspectZip(data);
+    const wb = read(data, {type:'array', sheets:[]});
+    return wb.SheetNames.map((name,i) => ({name, hidden: !!wb.Workbook?.Sheets?.[i]?.Hidden}));
 }
