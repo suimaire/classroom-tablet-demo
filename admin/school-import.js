@@ -1,5 +1,5 @@
 import {friendly} from './api.js?v=20261002-students-1';
-import {validateRoster} from './model.js?v=20261003-school-1';
+import {validateRoster} from './model.js?v=20261004-formula-1';
 export const sameClass=(a,b)=>['schoolYear','term','grade','classNumber','section'].every(k=>a[k]!==undefined&&String(a[k])===String(b[k]));
 export function mergeSchoolClass(existing,incoming,newId=()=>crypto.randomUUID()){
  const all=existing.filter(s=>s.active!==false).map(({id,number,name})=>({id,number,name})), byNumber=new Map(existing.map(s=>[s.number,s]));

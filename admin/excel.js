@@ -1,3 +1,4 @@
+import {schoolFormulaCells} from './school-formulas.js?v=20261004-formula-1';
 import { layoutCells, fromCells } from './layout.js';
 import { layoutOf } from './core.js';
 import { read, write, utils } from './xlsx.mjs';
@@ -41,7 +42,7 @@ function open(data, kind, sheetName) {
         assert(sheets.some(s => s.name === sheetName && !s.hidden), '가져올 표시 시트를 선택하세요.');
     }
     try {
-        wb = read(data, { type: 'array', cellFormula: true, cellDates: false, ...((kind === 'school' || kind === 'roster') ? {sheets:[sheetName]} : {}), sheetRows: kind === 'school' ? 10002 : 902 });
+        wb = read(data, { type: 'array', cellFormula: true, cellDates: false, ...((kind === 'school' || kind === 'roster') ? {sheets:[sheetName],...(kind === 'school' ? {bookFiles:true} : {})} : {}), sheetRows: kind === 'school' ? 10002 : 902 });
     }
     catch {
         throw Error('XLSX 파일을 읽을 수 없습니다. 암호 없이 저장한 .xlsx 양식을 사용하세요.');
@@ -49,11 +50,12 @@ function open(data, kind, sheetName) {
     const name = kind === 'school' || kind === 'roster' ? sheetName : '자리표';
     assert(wb.SheetNames.includes(name), `시트 이름은 ${name}이어야 합니다. 앱의 XLSX 양식을 사용하세요.`);
     if (kind !== 'school' && kind !== 'roster') assert(wb.SheetNames.every(n => n === name || (kind === 'seats' && n === '_meta')), '지원하지 않는 추가 시트가 있습니다.');
+    const formulaCells = kind === 'school' ? schoolFormulaCells(wb,name,utils) : null;
     for (const sheet of Object.values(wb.Sheets)) {
         if (kind !== 'school') assert(!sheet['!merges']?.length, '병합 셀은 지원하지 않습니다.');
         else for (const merge of sheet['!merges'] ?? []) {
-            const title = sheet[utils.encode_cell(merge.s)]?.v;
-            assert(merge.s.r === merge.e.r && typeof title === 'string' && (/^\s*\d+학년\s*\d+[A-Za-z0-9]*반(?:\s|$)/.test(title) || /^(?:남|여|총원|합계)/.test(title) || /트랙|track/i.test(title)), '반 제목·트랙 설명·집계의 가로 병합만 지원합니다.');
+            const titleCell = sheet[utils.encode_cell(merge.s)], title = titleCell?.v;
+            assert(merge.s.r === merge.e.r && ((formulaCells.has(utils.encode_cell(merge.s)) || titleCell?.f || titleCell?.F) || typeof title === 'string' && (/^\s*\d+학년\s*\d+[A-Za-z0-9]*반(?:\s|$)/.test(title) || /^(?:남|여|총원|합계)/.test(title) || /트랙|track/i.test(title))), '반 제목·트랙 설명·집계의 가로 병합만 지원합니다.');
         }
         const ref = sheet['!fullref'] || sheet['!ref'];
         if (ref) {
@@ -64,12 +66,31 @@ function open(data, kind, sheetName) {
         for (const [key, cell] of Object.entries(sheet)) {
             if (key.startsWith('!'))
                 continue;
-            assert(!cell.f && !cell.F, '수식 셀은 지원하지 않습니다. 값으로 붙여넣으세요.');
+            if (kind !== 'school') assert(!cell.f && !cell.F, '수식 셀은 지원하지 않습니다. 값으로 붙여넣으세요.');
             assert(!cell.l, '하이퍼링크 셀은 지원하지 않습니다.');
         }
     }
+    if (kind === 'school') {
+        const source = wb.Sheets[name], sheet = {...source}, formulas = [...formulaCells.values()];
+        for (const [address, cell] of Object.entries(source)) {
+            if (!address.startsWith('!') && (cell.f || cell.F)) {
+                const {r,c} = utils.decode_cell(address);
+                if (!formulaCells.has(address)) formulas.push({r,c,address});
+                // Never pass a formula, cached result, or formatted cached value to the parser.
+                sheet[address] = {t:'s',v:''};
+            }
+        }
+        for (const {address} of formulas) sheet[address] = {t:'s',v:''};
+        const end = utils.decode_range(source['!fullref'] || source['!ref'] || 'A1').e;
+        for (const {r,c} of formulas) {end.r=Math.max(end.r,r);end.c=Math.max(end.c,c);}
+        const rows = utils.sheet_to_json(sheet, {header:1,raw:false,defval:'',blankrows:true,range:{s:{r:0,c:0},e:end}});
+        for (const {r,c,address} of formulas) {
+            rows[r] ??= [];
+            rows[r][c] = {_schoolFormulaCell:true,address,row:r+1,column:c+1};
+        }
+        return {rows};
+    }
     const rows = utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: false, defval: '', blankrows: false });
-    if (kind === 'school') return { wb, rows };
     const expected = kind === 'roster' ? ['studentNumber', 'name'] : rows[0]?.includes('kind') ? ['row', 'col', 'kind', 'studentNumber'] : ['row', 'col', 'studentNumber'];
     assert(rows[0]?.join(',') === expected.join(','), 'XLSX 헤더가 양식과 다릅니다.');
     assert(rows.every(r => r.length === expected.length), 'XLSX 열 수가 양식과 다릅니다.');

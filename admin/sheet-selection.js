@@ -1,4 +1,4 @@
-import {listRosterSheets} from './excel.js?v=20261003-school-1';
+import {listRosterSheets} from './excel.js?v=20261004-formula-1';
 const escape=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export async function chooseRosterSheet(data){
  const sheets=listRosterSheets(data),visible=sheets.filter(s=>!s.hidden);

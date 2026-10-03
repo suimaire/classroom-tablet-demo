@@ -1,6 +1,6 @@
-import {chooseRosterSheet} from './sheet-selection.js?v=20261003-school-1';
+import {chooseRosterSheet} from './sheet-selection.js?v=20261004-formula-1';
 import {parseRoster,csvEncode,validateRules} from './core.js?v=20261002-complete-2';
-import {importRosterXlsx,makeWorkbook,XLSX_MIME,importLayoutXlsx,makeLayoutWorkbook} from './excel.js?v=20261003-school-1';
+import {importRosterXlsx,makeWorkbook,XLSX_MIME,importLayoutXlsx,makeLayoutWorkbook} from './excel.js?v=20261004-formula-1';
 export {csvEncode,makeWorkbook,XLSX_MIME,makeLayoutWorkbook};
 export const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const uuid=()=>crypto.randomUUID();

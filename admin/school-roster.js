@@ -1,5 +1,5 @@
 import {csvParse, validateStudent} from './core.js';
-import {readSchoolRosterXlsx} from './excel.js?v=20261003-school-1';
+import {readSchoolRosterXlsx} from './excel.js?v=20261004-formula-1';
 import {normalizeClass} from './class-management.js';
 
 export const MAX_SCHOOL_STUDENTS = 1200;
@@ -8,7 +8,21 @@ export function parseSchoolBlocks(rows, context) {
   const groups = [], seen = new Set();
   let current = null, header = false, total = 0, trackSeen = false, summary = false, summaryCounts = false;
   for (const [i, raw] of rows.entries()) {
-    const row = raw.map(v => String(v ?? '').trim());
+    const isFormula = v => v && typeof v === 'object' && v._schoolFormulaCell === true;
+    const literals = raw.map(v => isFormula(v) ? '' : String(v ?? '').trim());
+    const filledLiterals = literals.filter(Boolean);
+    const summaryToken = v => /^(?:(?:남|여|총원|합계)\s*[:：]?\s*)?(?:\d+\s*명?)?$/.test(v);
+    const summaryLabelColumn = literals.findIndex(v => /^(남|여|총원|합계)/.test(v));
+    const summaryRow = header && current?.students.length && /^(남|여|총원|합계)/.test(filledLiterals[0] ?? '') && filledLiterals.every(summaryToken) && !raw.some((v,column) => isFormula(v) && column <= summaryLabelColumn);
+    const summaryValueRow = summaryCounts && raw.filter(v=>isFormula(v)||String(v??'').trim()).length<=3 && filledLiterals.every(v=>/^\d+\s*명?$/.test(v));
+    const descriptionRow = !header && /트랙|track/i.test(literals[0] ?? '') && filledLiterals.length===1;
+    const literalTitle = /^(\d+)학년\s*(\d+)([A-Za-z0-9]*)반(?:\s+Adviser\s*:.*)?$/i.test(literals[0] ?? '');
+    for (const [column, value] of raw.entries()) {
+      if (!isFormula(value)) continue;
+      if (summaryRow || summaryValueRow || descriptionRow && column>0 || literalTitle && column>0 || header && /^\d+$/.test(literals[0]) && column>=3) continue;
+      throw Error(`${value.row}행 ${value.column}열 (${value.address}): 학번·성명·반 제목 또는 행 구분에 필요한 셀에 수식이 있습니다. 해당 셀만 값으로 붙여넣은 뒤 다시 가져오세요.`);
+    }
+    const row = literals;
     if (row.every(v => !v)) continue;
     const title = row[0]?.match(/^(\d+)학년\s*(\d+)([A-Za-z0-9]*)반(?:\s+Adviser\s*:.*)?$/i);
     if (title) {
