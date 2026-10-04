@@ -4,7 +4,7 @@ import {mountClassManagement} from './class-management.js?v=20261002-classes-1';
 import {mountPhotoSheet} from './photo-sheet.js?v=20261002-auto-1';
 import {mountTeacherAccounts} from './teacher-accounts.js?v=20261002-teachers-1';
 import {safeReviewPayload} from './submission-safety.js?v=20261002-students-1';
-import {mountStudentRepresentatives} from './student-representatives.js?v=20261002-students-1';
+import {mountStudentRepresentatives} from './student-representatives.js?v=20261004-student-password-1';
 import {CloudAPI,friendly} from './api.js?v=20261002-students-1';
 import {h,uuid,seatingStatus,historyBounds,validateReferenceRules,student,validateRoster,rosterFile,planImport,blankLayout,fromSnapshot,validateLayout,parserCourse,seatFile,portrait,csvEncode,makeWorkbook,XLSX_MIME,makeLayoutWorkbook} from './model.js?v=20261004-formula-1';
 const api=new CloudAPI(),app=document.querySelector('#app'),dialog=document.querySelector('#dialog');
