@@ -32,3 +32,48 @@
 a.button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:9px;text-decoration:none;cursor:pointer}a.button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}a.button:focus-visible{outline:3px solid #3394bb;outline-offset:2px}
 
 .teacher-course-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:16px 0}.teacher-course-list fieldset{min-width:0;border:1px solid var(--line);border-radius:10px;padding:12px}.teacher-course-list legend{font-weight:700}.teacher-list .student-row{flex-wrap:wrap;overflow-wrap:anywhere}[data-teacher-panel] input[type=email]{max-width:100%}[data-teacher-panel] [data-status]{white-space:pre-wrap}
+
+/* Teacher tablet classroom: text left, larger uncropped portrait right. */
+.teacher-view{max-width:none;padding:8px}
+.teacher-tools{display:block;position:relative;z-index:2}
+.teacher-top{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.teacher-top #course-selectors{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.teacher-course{font-size:0;margin:0;flex:1!important;min-width:140px;max-width:270px}
+.teacher-course .course-picker{min-width:0;font-size:16px;font-weight:750;margin:0;padding:8px}
+.teacher-tools details{position:relative;flex:none}
+.teacher-tools summary{display:flex;align-items:center;justify-content:center;cursor:pointer;list-style:none;border:1px solid var(--line);border-radius:9px;background:white;min-height:44px;padding:8px 10px;font-size:12px;white-space:nowrap;touch-action:manipulation}
+.teacher-tools summary::-webkit-details-marker{display:none}
+.teacher-tools summary:focus-visible{outline:3px solid #3394bb;outline-offset:2px}
+.teacher-tools button{padding:8px 10px;white-space:nowrap}
+.teacher-popover{position:absolute;top:calc(100% + 6px);right:0;width:280px;max-width:calc(100vw - 24px);padding:14px;background:white;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 32px #173b3429;z-index:5}
+.teacher-popover label{margin:0}
+.teacher-popover p{font-size:13px}
+.teacher-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.teacher-view .teacher-nav .tabs{margin:0;gap:4px;flex-wrap:nowrap}
+.teacher-view .teacher-nav button{font-size:13px}
+.teacher-summary{white-space:nowrap;font-size:12px}
+.teacher-view .mode-history{display:none}
+.teacher-view .classroom-panel{padding:6px;margin:6px 0}
+.teacher-view .classroom-panel header{gap:6px;flex-wrap:nowrap}
+.teacher-view .classroom-panel header h2,.teacher-view .reference-note,.teacher-view .ready-note,.teacher-view .recording-note{display:none}
+.teacher-view .classroom-panel header p{font-size:11px;margin:0}
+.teacher-view .classroom-panel header .badge{font-size:10px;padding:2px 6px}
+.teacher-view .classroom-panel .seat-grid{gap:4px;grid-auto-rows:minmax(116px,auto)}
+.teacher-view .classroom-panel .seat{display:flex;flex-direction:row;gap:4px;padding:4px;min-height:116px;align-items:center}
+.teacher-view .classroom-panel .seat .identity{flex:1 1 50px;min-width:50px;order:0}
+.teacher-view .classroom-panel .identity b{font-size:14px;line-height:1.25;min-height:0;margin:0 0 4px;overflow-wrap:anywhere}
+.teacher-view .classroom-panel .identity small{font-size:12px;line-height:1.3;white-space:nowrap}
+.teacher-view .classroom-panel .identity .star{font-size:13px;white-space:normal;overflow-wrap:normal;line-height:1.25;display:block;margin-top:5px}
+.teacher-view .classroom-panel .seat .portrait{order:1;flex:1.35 0 70px;width:70px;min-width:70px;max-width:104px;height:104px;object-fit:contain;border-radius:6px}
+.teacher-view .classroom-panel .space{min-height:116px}
+.teacher-view .space.aisle{font-size:0}
+.teacher-view .board{margin-top:6px;padding:3px}
+.teacher-view footer{display:none}
+.teacher-view.class-mode .teacher-nav,.teacher-view.class-mode #term-menu{display:none}
+.teacher-view.class-mode .mode-history{display:block}
+.teacher-view.class-mode .classroom-panel header{display:none}
+@media(max-width:800px){.teacher-summary{font-size:11px}.teacher-tools summary{padding:8px}.teacher-tools button{padding:8px}.teacher-course{min-width:130px}.teacher-view .teacher-nav button{font-size:12px}}
+@media(max-width:600px){.teacher-top{flex-wrap:wrap}.teacher-top #course-selectors{flex-basis:100%}.teacher-nav{align-items:flex-start;flex-direction:column}.teacher-summary{white-space:normal}.teacher-popover{position:fixed;top:110px;right:12px}}
+
+.teacher-view .count-token{display:inline-block;white-space:nowrap;overflow-wrap:normal}
+.teacher-view .seat-pan-hint{margin:3px 0 5px;padding:2px 8px;border-radius:5px;background:#dcece3;color:#173b34;font-size:12px;font-weight:700;text-align:center}
