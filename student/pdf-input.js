@@ -15,7 +15,7 @@ function groups(values, tolerance) { const bins = []; for (const v of values.sli
     else
         bins.push([v]);
 } return bins.map(b => b.reduce((a, x) => a + x, 0) / b.length); }
-export function inferPdf(items) {
+export function inferPdf(items, pathBoxes = []) {
     if (items.length > 10000)
         throw Error('텍스트 항목이 너무 많아 수동 입력이 필요합니다.');
     const text = items.filter(t => t.text.trim()).map(t => ({ ...t, text: t.text.trim() }));
@@ -24,6 +24,7 @@ export function inferPdf(items) {
     const header = text.find(t => classCode(t.text)) ?? groups(text.map(t => t.y), 2).map(y => { const line = text.filter(t => Math.abs(t.y - y) <= 2).sort((a, b) => a.x - b.x); return { ...line[0], text: line.map(t => t.text).join(' ') }; }).find(t => classCode(t.text));
     const numbers = text.filter(t => /^(\d{1,2}|\d{5})$/.test(t.text));
     const labels = text.filter(t => !/^(\d|빈\s*자리|빈\s*좌석|empty|교탁|칠판|teacher|board|Seatrus)/i.test(t.text) && !classCode(t.text));
+    const boxFor = points => pathBoxes.filter(b => b.width > 20 && b.height > 20 && points.every(t => { const x=t.x+t.width/2,y=t.y-t.height/2; return x>=b.left && x<=b.left+b.width && y>=b.top && y<=b.top+b.height; })).sort((a,b)=>a.width*a.height-b.width*b.height)[0];
     const used = new Set();
     const anchors = [];
     const issues = [];
@@ -36,7 +37,7 @@ export function inferPdf(items) {
             continue;
         }
         used.add(name);
-        anchors.push({ x: num.x + num.width / 2, y: name.y, rawNumber: num.text, name: name.text });
+        anchors.push({ x: num.x + num.width / 2, y: name.y, rawNumber: num.text, name: name.text, box: boxFor([num,name]) });
     }
     // Number labels share a stable column position even when names have different
     // widths or sit left of photos. Empty-seat labels are centered in the card.
@@ -46,7 +47,7 @@ export function inferPdf(items) {
     for (const blank of blanks) {
         const center = blank.x + blank.width / 2;
         const nearest = occupiedColumns.reduce((best, x) => Math.abs(x - center) < Math.abs(best - center) ? x : best, Infinity);
-        anchors.push({x: Math.abs(nearest - center) <= snapDistance ? nearest : center, y: blank.y, rawNumber: '', name: ''});
+        anchors.push({x: Math.abs(nearest - center) <= snapDistance ? nearest : center, y: blank.y, rawNumber: '', name: '', box: boxFor([blank])});
     }
     if (!anchors.length)
         return { rows: 4, cols: 8, seatColumns: 8, boardSide: '', classLabel: header?.text ?? '', cells: Array.from({ length: 32 }, (_, i) => ({ row: Math.floor(i / 8) + 1, col: i % 8 + 1, kind: 'desk', rawNumber: '', name: '' })), issues: ['추출 가능한 좌석 텍스트가 없습니다. 스캔 PDF 자동 OCR은 지원하지 않습니다. 원본 위 번호를 직접 입력하세요.'], scanned: true };
@@ -55,7 +56,7 @@ export function inferPdf(items) {
         throw Error('좌석 격자를 안전하게 추론할 수 없습니다. 수동 입력을 사용하세요.');
     const gaps = xs.slice(1).map((x, i) => x - xs[i]), minGap = Math.min(...gaps);
     const aisleAfter = new Set(gaps.map((g, i) => g > minGap * 1.10 && g > minGap + 7 ? i : -1).filter(i => i >= 0));
-    const colMap = xs.map((_, i) => i + 1 + [...aisleAfter].filter(a => a < i).length), cols = xs.length + aisleAfter.size, cells = [];
+    const colMap = xs.map((_, i) => i + 1 + [...aisleAfter].filter(a => a < i).length), cols = xs.length + aisleAfter.size, cells = [], cardBoxes = [];
     for (let r = 0; r < ys.length; r++)
         for (let x = 0; x < xs.length; x++) {
             const found = anchors.filter(t => Math.abs(t.x - xs[x]) <= 13 && Math.abs(t.y - ys[r]) <= 10);
@@ -64,6 +65,7 @@ export function inferPdf(items) {
             if (!found.length)
                 issues.push('원본 표기가 없는 빈자리를 추정했습니다. 원본과 대조하세요.');
             cells.push({ row: r + 1, col: colMap[x], kind: 'desk', rawNumber: found[0]?.rawNumber ?? '', name: found[0]?.name ?? '' });
+            if(found.length===1 && found[0].box) cardBoxes.push({row:r+1,col:colMap[x],...found[0].box});
             if (aisleAfter.has(x))
                 cells.push({ row: r + 1, col: colMap[x] + 1, kind: 'aisle', rawNumber: '', name: '' });
         }
@@ -80,7 +82,42 @@ export function inferPdf(items) {
     if (anchors.filter(x => x.rawNumber).length !== numbers.length)
         issues.push('번호 추출 수와 좌석 수가 다릅니다.');
     const deskWidth = Number.isFinite(minGap) ? minGap : 80, rowHeight = ys.length > 1 ? Math.min(...ys.slice(1).map((y, i) => y - ys[i])) : 70, columnWidths = xs.flatMap((_, i) => aisleAfter.has(i) ? [deskWidth, Math.max(8, gaps[i] - deskWidth)] : [deskWidth]);
-    return { rows: ys.length, cols, seatColumns: xs.length, boardSide, classLabel: header?.text ?? '', cells, issues: [...new Set(issues)], scanned: false, sourceGrid: { left: xs[0] - deskWidth / 2, top: ys[0] - rowHeight / 2, width: xs.at(-1) - xs[0] + deskWidth, height: ys.at(-1) - ys[0] + rowHeight, columnWidths } };
+    return { rows: ys.length, cols, seatColumns: xs.length, boardSide, classLabel: header?.text ?? '', cells, issues: [...new Set(issues)], scanned: false, sourceGrid: cardSourceGrid(cardBoxes, cells) ?? { left: xs[0] - deskWidth / 2, top: ys[0] - rowHeight / 2, width: xs.at(-1) - xs[0] + deskWidth, height: ys.at(-1) - ys[0] + rowHeight, columnWidths } };
+}
+// Use drawn card bounds only when every desk has a distinct, non-overlapping card.
+// Text-only/scanned documents retain the adjustable inferred grid.
+function cardSourceGrid(boxes, cells) {
+    if (!boxes.length || boxes.length !== cells.filter(c=>c.kind==='desk').length) return null;
+    for(let i=0;i<boxes.length;i++)for(let j=0;j<i;j++){
+        const a=boxes[i],b=boxes[j];
+        if(Math.min(a.left+a.width,b.left+b.width)-Math.max(a.left,b.left)>1 && Math.min(a.top+a.height,b.top+b.height)-Math.max(a.top,b.top)>1)return null;
+    }
+    const left=Math.min(...boxes.map(b=>b.left)),top=Math.min(...boxes.map(b=>b.top));
+    const width=Math.max(...boxes.map(b=>b.left+b.width))-left,height=Math.max(...boxes.map(b=>b.top+b.height))-top;
+    return {left,top,width,height,cardBoxes:boxes};
+}
+// PDF.js path bounds are in the current graphics coordinate system, not CSS px.
+export function pdfPathBoxes(list, ops, viewport) {
+    if(list.fnArray.length>200000)return [];
+    const multiply=(a,b)=>[a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
+    let matrix=[1,0,0,1,0,0];const stack=[],boxes=[],seen=new Set();
+    for(let i=0;i<list.fnArray.length;i++){
+        const fn=list.fnArray[i],args=list.argsArray[i];
+        if(fn===ops.save)stack.push([...matrix]);
+        else if(fn===ops.restore)matrix=stack.pop()??matrix;
+        else if(fn===ops.transform)matrix=multiply(matrix,args);
+        else if(fn===ops.paintFormXObjectBegin){stack.push([...matrix]);if(args[0])matrix=multiply(matrix,args[0]);}
+        else if(fn===ops.paintFormXObjectEnd)matrix=stack.pop()??matrix;
+        else if(fn===ops.constructPath && args[2]?.length===4){
+            const b=args[2],m=multiply(viewport.transform,matrix);
+            const points=[[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]].map(([x,y])=>[m[0]*x+m[2]*y+m[4],m[1]*x+m[3]*y+m[5]]);
+            const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
+            const box={left:Math.min(...xs),top:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)};
+            if(!Object.values(box).every(Number.isFinite)||box.width<=0||box.height<=0||box.left<-.5||box.top<-.5||box.left+box.width>viewport.width+.5||box.top+box.height>viewport.height+.5)continue;
+            const key=Object.values(box).map(n=>Math.round(n*10)).join(',');if(seen.has(key))continue;seen.add(key);boxes.push(box);if(boxes.length>5000)return [];
+        }
+    }
+    return boxes;
 }
 export function validatePdfDraft(d, context) { const errors = [], seen = new Set(); if (!/^\d{3}$/.test(context.prefix))
     errors.push('관리자 학번 접두 3자리를 먼저 확인하세요.'); if (!Number.isInteger(d.rows) || !Number.isInteger(d.cols) || d.rows < 1 || d.cols < 1 || d.rows > 30 || d.cols > 30)
@@ -128,8 +165,10 @@ export async function loadLocalPdf(bytes, {signal} = {}) {
         if (doc.numPages !== 1)
             throw Error('자동 가져오기는 1쪽 PDF만 지원합니다. 페이지별로 나누어 주세요.');
         const page = await doc.getPage(1), v = page.getViewport({ scale: 1 }), content = await page.getTextContent();
+        let pathBoxes=[];
+        try {pathBoxes=pdfPathBoxes(await page.getOperatorList(),pdf.OPS,v);} catch {if(signal?.aborted)throw new DOMException('취소되었습니다.','AbortError');}
         const items = content.items.filter((x) => typeof x.str === 'string').map((t) => ({ text: t.str, x: v.transform[0] * t.transform[4] + v.transform[2] * t.transform[5] + v.transform[4], y: v.transform[1] * t.transform[4] + v.transform[3] * t.transform[5] + v.transform[5], width: t.width, height: t.height }));
-        return { items, width: v.width, height: v.height, render: async (canvas) => { const view = page.getViewport({ scale: Math.min(1.5, 1400 / v.width) }); canvas.width = view.width; canvas.height = view.height; await page.render({ canvasContext: canvas.getContext('2d'), canvas, viewport: view }).promise; }, close };
+        return { items, pathBoxes, width: v.width, height: v.height, render: async (canvas) => { const view = page.getViewport({ scale: Math.min(1.5, 1400 / v.width) }); canvas.width = view.width; canvas.height = view.height; await page.render({ canvasContext: canvas.getContext('2d'), canvas, viewport: view }).promise; }, close };
     }
     catch (e) {
         await close();

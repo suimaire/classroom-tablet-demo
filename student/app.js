@@ -1,7 +1,7 @@
 import {CloudAPI,friendly} from './api.js';
 import {authEmail,uuid,safeSnapshot,validateDraft,receiptMessage,SubmissionState} from './model.js';
 import {parseSubmissionJson,parseSubmissionXlsx} from './submission-input.js';
-import {reviewPdfFile} from './pdf-review.js?v=20261005-student-pdf-1';
+import {reviewPdfFile} from './pdf-review.js?v=20261005-student-pdf-2';
 const api=new CloudAPI(),state=new SubmissionState(),$=id=>document.getElementById(id),h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let logged=false,claimed='',working=false,epoch=0,authBusy=false,pdfAbort=null,selectedFile=null,manualBackup=null,manualMode=false;
 const status=s=>$('status').textContent=s;

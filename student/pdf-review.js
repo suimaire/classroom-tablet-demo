@@ -1,4 +1,4 @@
-import { loadLocalPdf, inferPdf, validatePdfDraft } from './pdf-input.js?v=20261005-student-pdf-1';
+import { loadLocalPdf, inferPdf, validatePdfDraft } from './pdf-input.js?v=20261005-student-pdf-2';
 const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 /** PDF bytes and extracted names remain in this dialog's memory; only reviewed cells leave it. */
 export async function reviewPdfFile(file, context, options = {}) {
@@ -14,7 +14,7 @@ export async function reviewPdfFile(file, context, options = {}) {
     let renderReady = false;
     let draft;
     try {
-        draft = inferPdf(source.items);
+        draft = inferPdf(source.items, source.pathBoxes);
     }
     catch {
         draft = inferPdf([]);
@@ -35,7 +35,7 @@ export async function reviewPdfFile(file, context, options = {}) {
         const value = Math.max(0, Math.min(100, Number(input.value) || 0));
         o.style[key] = value + '%';
     } confirm.checked = false; check(); }
-    function rows() { q('#pdf-detected').textContent = `추출 제목: ${draft.classLabel || '없음 — 대상 학급을 원본에서 직접 확인'} · ${draft.rows}행 × ${draft.cols}열 (통로 포함)${draft.scanned ? ' · 수동 입력' : ''}`; q('#pdf-warnings').textContent = ['간격으로 추정한 통로와 빈자리는 반드시 원본과 대조하세요.', ...draft.issues].join(' '); q('#pdf-cells').innerHTML = draft.cells.map((c, i) => `<tr><td>${c.row}행 ${c.col}열</td><td><select data-index="${i}" data-field="kind" aria-label="${c.row}행 ${c.col}열 공간">${[['desk', '책상'], ['aisle', '통로'], ['void', '제외']].map(([value, label]) => `<option value="${value}" ${c.kind === value ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td><input data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="${c.row}행 ${c.col}열 번호" ${c.kind !== 'desk' ? 'disabled' : ''}></td><td><input data-index="${i}" data-field="name" maxlength="50" value="${escape(c.name)}" aria-label="${c.row}행 ${c.col}열 이름" ${c.kind !== 'desk' ? 'disabled' : ''}></td></tr>`).join(''); const o = q('#pdf-overlay'); o.style.gridTemplateColumns = draft.sourceGrid ? draft.sourceGrid.columnWidths.map(w => `minmax(0,${w}fr)`).join(' ') : `repeat(${draft.cols},minmax(0,1fr))`; o.style.gridTemplateRows = `repeat(${draft.rows},1fr)`; o.innerHTML = draft.cells.map((c, i) => c.kind === 'desk' ? `<input class="pdf-seat-number" data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="원본 위 ${c.row}행 ${c.col}열 번호" placeholder="빈자리">` : `<span class="pdf-space">${c.kind === 'aisle' ? '통로' : '제외'}</span>`).join(''); check(true); }
+    function rows() { q('#pdf-detected').textContent = `추출 제목: ${draft.classLabel || '없음 — 대상 학급을 원본에서 직접 확인'} · ${draft.rows}행 × ${draft.cols}열 (통로 포함)${draft.scanned ? ' · 수동 입력' : ''}`; q('#pdf-warnings').textContent = ['간격으로 추정한 통로와 빈자리는 반드시 원본과 대조하세요.', ...draft.issues].join(' '); q('#pdf-cells').innerHTML = draft.cells.map((c, i) => `<tr><td>${c.row}행 ${c.col}열</td><td><select data-index="${i}" data-field="kind" aria-label="${c.row}행 ${c.col}열 공간">${[['desk', '책상'], ['aisle', '통로'], ['void', '제외']].map(([value, label]) => `<option value="${value}" ${c.kind === value ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td><input data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="${c.row}행 ${c.col}열 번호" ${c.kind !== 'desk' ? 'disabled' : ''}></td><td><input data-index="${i}" data-field="name" maxlength="50" value="${escape(c.name)}" aria-label="${c.row}행 ${c.col}열 이름" ${c.kind !== 'desk' ? 'disabled' : ''}></td></tr>`).join(''); const o = q('#pdf-overlay'); o.classList.toggle('card-aligned',!!draft.sourceGrid?.cardBoxes); o.style.gridTemplateColumns = draft.sourceGrid?.columnWidths ? draft.sourceGrid.columnWidths.map(w => `minmax(0,${w}fr)`).join(' ') : `repeat(${draft.cols},minmax(0,1fr))`; o.style.gridTemplateRows = `repeat(${draft.rows},1fr)`; o.innerHTML = draft.cells.map((c, i) => { const g=draft.sourceGrid,box=g?.cardBoxes?.find(b=>b.row===c.row&&b.col===c.col); const placement=box?`left:${(box.left-g.left+box.width/2)/g.width*100}%;top:${(box.top-g.top+box.height/2)/g.height*100}%;width:${box.width/g.width*100}%;max-height:${box.height/g.height*100}%`:''; return c.kind === 'desk' ? `<input style="${placement}" class="pdf-seat-number" data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="원본 위 ${c.row}행 ${c.col}열 번호" placeholder="빈자리">` : `<span class="pdf-space">${c.kind === 'aisle' ? '통로' : '제외'}</span>`; }).join(''); check(true); }
     if (draft.sourceGrid) {
         const g = draft.sourceGrid;
         for (const key of ['left', 'top', 'width', 'height'])
@@ -49,6 +49,11 @@ export async function reviewPdfFile(file, context, options = {}) {
     } if (t.dataset.index === undefined)
         return; const c = draft.cells[Number(t.dataset.index)], f = t.dataset.field; if (f === 'kind') {
         c.kind = t.value;
+        if(c.kind==='desk' && draft.sourceGrid?.cardBoxes && !draft.sourceGrid.cardBoxes.some(b=>b.row===c.row && b.col===c.col)){
+            draft.sourceGrid=inferPdf(source.items).sourceGrid;
+            if(draft.sourceGrid)for(const key of ['left','top','width','height'])q(`[data-bound="${key}"]`).value=String(draft.sourceGrid[key]/(['left','width'].includes(key)?source.width:source.height)*100);
+            bounds();
+        }
         if (c.kind !== 'desk') {
             c.rawNumber = '';
             c.name = '';
