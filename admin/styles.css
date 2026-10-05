@@ -77,3 +77,15 @@ a.button{display:inline-flex;align-items:center;justify-content:center;min-heigh
 
 .teacher-view .count-token{display:inline-block;white-space:nowrap;overflow-wrap:normal}
 .teacher-view .seat-pan-hint{margin:3px 0 5px;padding:2px 8px;border-radius:5px;background:#dcece3;color:#173b34;font-size:12px;font-weight:700;text-align:center}
+
+/* Teacher viewport fit: preserve every source cell; only display dimensions change. */
+.teacher-view .teacher-seating-fit .grid-scroll{overscroll-behavior:contain;scrollbar-gutter:auto}
+.teacher-view .teacher-seating-fit .seat-grid{grid-auto-rows:auto;align-items:stretch}
+.teacher-view .teacher-seating-fit .seat,.teacher-view .teacher-seating-fit .space{min-height:0;height:100%;min-width:0}
+.teacher-view .teacher-seating-fit .seat .identity{flex:1 1 var(--seat-text-min);min-width:var(--seat-text-min)}
+.teacher-view .teacher-seating-fit .identity b{font-size:var(--seat-name-size)}
+.teacher-view .teacher-seating-fit .identity small{font-size:var(--seat-number-size)}
+.teacher-view .teacher-seating-fit .identity .star{font-size:var(--seat-count-size)}
+.teacher-view .teacher-seating-fit.seat-compact .star>span[aria-hidden]{display:none}
+.teacher-view .teacher-seating-fit .seat .portrait{flex:0 0 var(--seat-photo-width);width:var(--seat-photo-width);min-width:0;max-width:none;height:var(--seat-photo-height);max-height:100%;object-fit:contain}
+.teacher-view .teacher-seating-fit .space.void{min-height:0}
