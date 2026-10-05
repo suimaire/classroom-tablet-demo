@@ -25,7 +25,7 @@ export function inferPdf(items) {
     const numbers = text.filter(t => /^(\d{1,2}|\d{5})$/.test(t.text));
     const labels = text.filter(t => !/^(\d|빈\s*자리|빈\s*좌석|empty|교탁|칠판|teacher|board|Seatrus)/i.test(t.text) && !classCode(t.text));
     const used = new Set();
-    const anchors = blanks.map(t => ({ x: t.x + t.width / 2, y: t.y, rawNumber: '', name: '' }));
+    const anchors = [];
     const issues = [];
     for (const num of numbers) {
         const candidates = labels.filter(t => !used.has(t) && t.y > num.y + 2 && t.y < num.y + 40 && Math.abs(t.x - num.x) < 65);
@@ -36,7 +36,17 @@ export function inferPdf(items) {
             continue;
         }
         used.add(name);
-        anchors.push({ x: name.x + name.width / 2, y: name.y, rawNumber: num.text, name: name.text });
+        anchors.push({ x: num.x + num.width / 2, y: name.y, rawNumber: num.text, name: name.text });
+    }
+    // Number labels share a stable column position even when names have different
+    // widths or sit left of photos. Empty-seat labels are centered in the card.
+    const occupiedColumns = groups(anchors.map(a => a.x), 13);
+    const occupiedGaps = occupiedColumns.slice(1).map((x, i) => x - occupiedColumns[i]);
+    const snapDistance = occupiedGaps.length ? Math.min(...occupiedGaps) / 2 : 13;
+    for (const blank of blanks) {
+        const center = blank.x + blank.width / 2;
+        const nearest = occupiedColumns.reduce((best, x) => Math.abs(x - center) < Math.abs(best - center) ? x : best, Infinity);
+        anchors.push({x: Math.abs(nearest - center) <= snapDistance ? nearest : center, y: blank.y, rawNumber: '', name: ''});
     }
     if (!anchors.length)
         return { rows: 4, cols: 8, seatColumns: 8, boardSide: '', classLabel: header?.text ?? '', cells: Array.from({ length: 32 }, (_, i) => ({ row: Math.floor(i / 8) + 1, col: i % 8 + 1, kind: 'desk', rawNumber: '', name: '' })), issues: ['추출 가능한 좌석 텍스트가 없습니다. 스캔 PDF 자동 OCR은 지원하지 않습니다. 원본 위 번호를 직접 입력하세요.'], scanned: true };
@@ -102,22 +112,27 @@ export function validatePdfDraft(d, context) { const errors = [], seen = new Set
     catch (e) {
         errors.push(`${c.row}행 ${c.col}열: ${e instanceof Error ? e.message : String(e)}`);
     } return { row: c.row, col: c.col, kind: c.kind, studentNumber }; }); return { errors: [...new Set(errors)], layout: { rows: d.rows, cols: d.cols, boardSide: d.boardSide, cells } }; }
-export async function loadLocalPdf(bytes) {
+export async function loadLocalPdf(bytes, {signal} = {}) {
+    if (signal?.aborted) throw new DOMException('취소되었습니다.', 'AbortError');
     if (bytes.byteLength > 15 * 1024 * 1024)
         throw Error('PDF는 15MB 이하만 지원합니다.');
     const pdf = await import('./pdf.mjs');
     pdf.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.mjs', import.meta.url).href;
     const task = pdf.getDocument({ data: bytes, BinaryDataFactory: LocalPdfBinaryDataFactory, useWorkerFetch: false, isEvalSupported: false, enableXfa: false, disableAutoFetch: true, disableStream: true, cMapUrl: new URL('./', import.meta.url).href, cMapPacked: true, standardFontDataUrl: new URL('./', import.meta.url).href, wasmUrl: new URL('./', import.meta.url).href });
+    const abort = () => { void task.destroy().catch(() => {}); };
+    signal?.addEventListener('abort', abort, {once: true});
+    const close = () => { signal?.removeEventListener('abort', abort); return task.destroy(); };
     try {
+        if (signal?.aborted) { await close(); throw new DOMException('취소되었습니다.', 'AbortError'); }
         const doc = await task.promise;
         if (doc.numPages !== 1)
             throw Error('자동 가져오기는 1쪽 PDF만 지원합니다. 페이지별로 나누어 주세요.');
         const page = await doc.getPage(1), v = page.getViewport({ scale: 1 }), content = await page.getTextContent();
         const items = content.items.filter((x) => typeof x.str === 'string').map((t) => ({ text: t.str, x: v.transform[0] * t.transform[4] + v.transform[2] * t.transform[5] + v.transform[4], y: v.transform[1] * t.transform[4] + v.transform[3] * t.transform[5] + v.transform[5], width: t.width, height: t.height }));
-        return { items, width: v.width, height: v.height, render: async (canvas) => { const view = page.getViewport({ scale: Math.min(1.5, 1400 / v.width) }); canvas.width = view.width; canvas.height = view.height; await page.render({ canvasContext: canvas.getContext('2d'), canvas, viewport: view }).promise; }, close: () => task.destroy() };
+        return { items, width: v.width, height: v.height, render: async (canvas) => { const view = page.getViewport({ scale: Math.min(1.5, 1400 / v.width) }); canvas.width = view.width; canvas.height = view.height; await page.render({ canvasContext: canvas.getContext('2d'), canvas, viewport: view }).promise; }, close };
     }
     catch (e) {
-        await task.destroy();
+        await close();
         throw e;
     }
 }

@@ -1,11 +1,17 @@
-import { loadLocalPdf, inferPdf, validatePdfDraft } from './pdf-input.js';
+import { loadLocalPdf, inferPdf, validatePdfDraft } from './pdf-input.js?v=20261005-student-pdf-1';
 const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 /** PDF bytes and extracted names remain in this dialog's memory; only reviewed cells leave it. */
 export async function reviewPdfFile(file, context, options = {}) {
     if (file.size > 15 * 1024 * 1024)
         throw Error('PDF는 15MB 이하만 지원합니다.');
-    const source = await loadLocalPdf(new Uint8Array(await file.arrayBuffer()));
-    if(options.signal?.aborted){await source.close();return null;}
+    if (options.signal?.aborted) return null;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (options.signal?.aborted) return null;
+    let source;
+    try { source = await loadLocalPdf(bytes, {signal: options.signal}); }
+    catch (error) { if (options.signal?.aborted) return null; throw error; }
+    if (options.signal?.aborted) { await source.close(); return null; }
+    let renderReady = false;
     let draft;
     try {
         draft = inferPdf(source.items);
@@ -23,7 +29,7 @@ export async function reviewPdfFile(file, context, options = {}) {
     const board = q('#pdf-board'), confirm = q('#pdf-confirm'), next = q('#pdf-next');
     board.value = draft.boardSide;
     function check(reset = false) { if (reset)
-        confirm.checked = false; draft.boardSide = board.value; const result = validatePdfDraft(draft, context); q('#pdf-errors').textContent = result.errors.length ? result.errors.join(' · ') : `검증 통과 · 배치 ${result.layout.cells.filter(c => c.studentNumber).length}명 · 빈 책상 ${result.layout.cells.filter(c => c.kind === 'desk' && !c.studentNumber).length}칸 · 통로 ${result.layout.cells.filter(c => c.kind === 'aisle').length}칸`; next.disabled = !!result.errors.length || !confirm.checked; return result; }
+        confirm.checked = false; draft.boardSide = board.value; const result = validatePdfDraft(draft, context); q('#pdf-errors').textContent = result.errors.length ? result.errors.join(' · ') : `검증 통과 · 배치 ${result.layout.cells.filter(c => c.studentNumber).length}명 · 빈 책상 ${result.layout.cells.filter(c => c.kind === 'desk' && !c.studentNumber).length}칸 · 통로 ${result.layout.cells.filter(c => c.kind === 'aisle').length}칸`; next.disabled = !renderReady || !!result.errors.length || !confirm.checked; return result; }
     function bounds() { const o = q('#pdf-overlay'); for (const key of ['left', 'top', 'width', 'height']) {
         const input = q(`[data-bound="${key}"]`);
         const value = Math.max(0, Math.min(100, Number(input.value) || 0));
@@ -64,20 +70,24 @@ export async function reviewPdfFile(file, context, options = {}) {
     q('#pdf-manual').onclick = manual;
     q('#pdf-resize').onclick = manual;
     q('#pdf-overlay-toggle').onclick = () => { q('#pdf-overlay').hidden = !q('#pdf-overlay').hidden; };
-    const earlyAbort=()=>{dialog.close();dialog.remove();void source.close();};options.signal?.addEventListener('abort',earlyAbort,{once:true});
-    try {
-        await source.render(q('#pdf-canvas'));
-        options.signal?.removeEventListener('abort',earlyAbort);
-    }
-    catch {
-        options.signal?.removeEventListener('abort',earlyAbort);
-        await source.close();
-        dialog.remove();
-        if(options.signal?.aborted)return null;
-        throw Error('이 브라우저에서 PDF 원본을 렌더링하지 못했습니다. 최신 브라우저 또는 XLSX 양식을 사용하세요.');
-    }
-    if(options.signal?.aborted){dialog.close();dialog.remove();await source.close();return null;}
-    return new Promise(resolve => { let done = false; const finish = (result) => { if (done)
-        return; done = true; options.signal?.removeEventListener('abort',abort); dialog.close(); dialog.remove(); void source.close(); resolve(result); }; const abort=()=>finish(null);options.signal?.addEventListener('abort',abort,{once:true}); q('#pdf-close').onclick = () => finish(null); dialog.oncancel = e => { e.preventDefault(); finish(null); }; next.onclick = () => { const r = check(); if (!r.errors.length && confirm.checked)
-        finish(r.layout); }; });
+    return new Promise((resolve, reject) => {
+        let done = false;
+        const finish = (result, error) => {
+            if (done) return;
+            done = true;
+            options.signal?.removeEventListener('abort', abort);
+            dialog.close(); dialog.remove();
+            void source.close().catch(() => {});
+            if (error) reject(error); else resolve(result);
+        };
+        const abort = () => finish(null);
+        options.signal?.addEventListener('abort', abort, {once: true});
+        q('#pdf-close').onclick = () => finish(null);
+        dialog.oncancel = e => { e.preventDefault(); finish(null); };
+        next.onclick = () => { const r = check(); if (renderReady && !r.errors.length && confirm.checked) finish(r.layout); };
+        if (options.signal?.aborted) { finish(null); return; }
+        source.render(q('#pdf-canvas')).then(() => { if (!done) { renderReady = true; check(); options.onReady?.(); } }).catch(() => {
+            if (!done) finish(null, Error('이 브라우저에서 PDF 원본을 렌더링하지 못했습니다. 최신 브라우저 또는 XLSX 양식을 사용하세요.'));
+        });
+    });
 }
