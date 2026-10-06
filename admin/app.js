@@ -133,26 +133,29 @@ function updateSeatPanHint(){
  const gap=4,aisle=8,large=teacherSeatScale==='large',board=panel.querySelector('.board');
  const css=n=>getComputedStyle(n),px=(n,key)=>parseFloat(css(n)[key])||0;
  const availableHeight=()=>Math.max(120,Math.floor((window.visualViewport?.height??innerHeight)+(window.visualViewport?.offsetTop??0)-scroller.getBoundingClientRect().top-board.offsetHeight-px(board,'marginTop')-px(panel,'paddingBottom')-px(panel,'borderBottomWidth')-px(panel,'marginBottom')-px(panel.closest('main'),'paddingBottom')));
- panel.style.setProperty('--seat-name-size','14px');panel.style.setProperty('--seat-number-size','12px');panel.style.setProperty('--seat-count-size','13px');
- const textMin=Math.max(58,...[...grid.querySelectorAll('.count-token')].map(n=>n.getBoundingClientRect().width));
+ const compact=!large&&(availableHeight()/deskRows<128||scroller.clientWidth/deskCols<144);
+ panel.classList.toggle('seat-fit-dense',compact);
+ const nameSize=compact?12:14,numberSize=compact?10:12,countSize=compact?11:13;
+ panel.style.setProperty('--seat-name-size',nameSize+'px');panel.style.setProperty('--seat-number-size',numberSize+'px');panel.style.setProperty('--seat-count-size',countSize+'px');
+ const textMin=Math.max(compact?42:58,...[...grid.querySelectorAll('.count-token')].map(n=>n.getBoundingClientRect().width));
  hint.hidden=true;
- let minHeight=large?116:68;
+ let minHeight=large?116:64;
  const apply=()=>{
   const width=scroller.clientWidth,height=availableHeight();
-  const cardWidth=Math.max(large?Math.max(134,textMin+84):textMin+58,(width-(l.cols-deskCols)*aisle-(l.cols-1)*gap)/deskCols);
+  const cardWidth=Math.max(large?Math.max(134,textMin+84):textMin+(compact?44:58),(width-(l.cols-deskCols)*aisle-(l.cols-1)*gap)/deskCols);
   let cardHeight=Math.max(minHeight,(height-(l.rows-deskRows)*aisle-(l.rows-1)*gap)/deskRows);
   const setSizes=()=>{
-   const scale=Math.min(1.4,Math.max(1,Math.min(cardWidth/134,cardHeight/116)));
+   const scale=compact?1:Math.min(1.4,Math.max(1,Math.min(cardWidth/134,cardHeight/116)));
    const identityWidth=textMin*scale;
-   const photoWidth=Math.max(44,Math.min(cardWidth-identityWidth-14,(cardHeight-10)*.75));
+   const photoWidth=Math.max(compact?32:44,Math.min(cardWidth-identityWidth-12,(cardHeight-10)*.75));
    grid.style.gridTemplateColumns=columns.map(full=>(full?cardWidth:aisle)+'px').join(' ');
    grid.style.gridTemplateRows=rows.map(full=>(full?cardHeight:aisle)+'px').join(' ');
    scroller.style.height=height+'px';
    panel.classList.toggle('seat-compact',cardHeight<92);
-   for(const [key,value]of Object.entries({'text-min':identityWidth,'photo-width':photoWidth,'photo-height':cardHeight-10,'name-size':14*scale,'number-size':12*scale,'count-size':13*scale}))panel.style.setProperty('--seat-'+key,value+'px');
+   for(const [key,value]of Object.entries({'text-min':identityWidth,'photo-width':photoWidth,'photo-height':cardHeight-10,'name-size':nameSize*scale,'number-size':numberSize*scale,'count-size':countSize*scale}))panel.style.setProperty('--seat-'+key,value+'px');
   };
   setSizes();
-  const textHeight=Math.max(0,...[...grid.querySelectorAll('.identity')].map(n=>n.scrollHeight))+38;
+  const textHeight=Math.max(0,...[...grid.querySelectorAll('.identity')].map(n=>n.scrollHeight))+(compact?30:38);
   if(textHeight>cardHeight){minHeight=Math.ceil(textHeight);cardHeight=minHeight;setSizes();}
   return {x:scroller.scrollWidth>scroller.clientWidth+1,y:scroller.scrollHeight>scroller.clientHeight+1};
  };

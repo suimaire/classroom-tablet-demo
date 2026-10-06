@@ -110,3 +110,11 @@ a.button{display:inline-flex;align-items:center;justify-content:center;min-heigh
 
 /* Teacher account creation and scoped class editing. */
 .teacher-editor{margin:20px 0;padding:20px;border:1px solid var(--line);border-radius:12px;background:#f7faf6}.teacher-editor h3{margin-top:0}.teacher-editor h3:focus{outline:3px solid #3394bb;outline-offset:4px}.teacher-course-period>h4{margin:22px 0 8px}.teacher-course-period .teacher-course-list{margin-top:8px}.teacher-assign{display:flex;align-items:center;gap:8px;min-height:44px}[data-teacher-panel] input[type=text]{max-width:100%}@media(max-width:540px){.teacher-editor{padding:12px}.teacher-course-list{grid-template-columns:minmax(0,1fr)}}
+
+/* Dense fit keeps readable names and a separate history tap target. */
+.teacher-view .seat-fit-dense .seat{padding:3px;padding-bottom:27px}
+.teacher-view .seat-fit-dense .identity{line-height:1.1}
+.teacher-view .seat-fit-dense .identity b{line-height:1.1;margin:0 0 1px}
+.teacher-view .seat-fit-dense .identity small{line-height:1.1}
+.teacher-view .seat-fit-dense .identity .star{line-height:1.1;margin-top:1px}
+.teacher-view .seat-fit-dense .seat-history{min-height:24px;line-height:18px;font-size:11px;padding:1px 3px;bottom:2px}

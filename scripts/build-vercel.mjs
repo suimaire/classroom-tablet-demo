@@ -54,6 +54,7 @@ const files = [
   "student/jbig2_nowasm_fallback.js",
   "student/layout.js",
   "student/model.js",
+  "student/seat-edits.js",
   "student/openjpeg_nowasm_fallback.js",
   "student/pdf-assets.js",
   "student/pdf-input.js",
