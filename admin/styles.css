@@ -118,3 +118,61 @@ a.button{display:inline-flex;align-items:center;justify-content:center;min-heigh
 .teacher-view .seat-fit-dense .identity small{line-height:1.1}
 .teacher-view .seat-fit-dense .identity .star{line-height:1.1;margin-top:1px}
 .teacher-view .seat-fit-dense .seat-history{min-height:24px;line-height:18px;font-size:11px;padding:1px 3px;bottom:2px}
+
+/* 2026-10 classroom redesign: geometry unchanged (padding, gaps, borders, fit variables); clearer states and touch feedback. */
+:root{--rec:#2f7d4f;--rec-soft:#e6f3ea;--rec-line:#9fceb0;--chalk:#2c4a3c;--focus:#1f6fd1}
+body{-webkit-tap-highlight-color:transparent}
+.teacher-view{background:#eef2ec;min-height:100vh;min-height:100dvh}
+body:has(.teacher-view){background:#eef2ec}
+/* Toolbar */
+.teacher-view .teacher-tools button,.teacher-view .teacher-tools summary{border-radius:11px;border-color:#cfd9cf;font-weight:650;box-shadow:0 1px 2px #17382b0f}
+.teacher-view .teacher-tools button:not(:disabled):active,.teacher-view .teacher-tools summary:active{transform:scale(.97)}
+.teacher-view #class-mode{background:#fff;border-color:#9fb8a8;color:var(--ink)}
+.teacher-view #class-mode[aria-pressed=true]{background:#7a4b06;border-color:#7a4b06;color:#fff}
+.teacher-view .teacher-course .course-picker{border-radius:11px;border-color:#cfd9cf;box-shadow:0 1px 2px #17382b0f}
+.teacher-view .teacher-nav .tabs{padding:3px;border-radius:12px;background:#dfe7dd}
+.teacher-view .teacher-nav .tabs button{min-height:38px;border:0;border-radius:9px;background:transparent;box-shadow:none;color:#3c5a4c}
+.teacher-view .teacher-nav .tabs button.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px #17382b26}
+.teacher-summary{color:#4f6659;font-weight:600}
+.teacher-popover{border-radius:14px}
+/* Classroom panel and cards */
+.teacher-view .classroom-panel{border-radius:16px;border-color:#d5dfd3;box-shadow:0 1px 2px #17382b0d,0 6px 20px #17382b0f}
+.classroom-panel .seat{border-color:#d6dfd4;border-radius:12px;background:#fff;box-shadow:0 1px 2px #17382b14;transition:background-color .15s,box-shadow .15s,transform .08s}
+.classroom-panel .seat.recorded{background:var(--rec-soft);border-color:var(--rec-line);box-shadow:inset 0 3px 0 var(--rec),0 1px 2px #17382b14}
+.classroom-panel .identity b{color:#14302a}
+.classroom-panel .identity small{color:#5f7268}
+.classroom-panel .identity .star{color:#9a7a1e}
+.classroom-panel .seat:not(.recorded) .identity .star{color:#8a9a90}
+.classroom-panel .seat.recorded .identity .star{color:var(--rec)}
+.teacher-view .classroom-panel .seat .portrait{background:#e7eee6}
+.seat-record{border-radius:inherit;cursor:pointer}
+.seat-record:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.seat:has(.seat-record:not(:disabled):hover){border-color:#7fb08f}
+.seat:has(.seat-record:not(:disabled):active){transform:scale(.97);background:#d3ead9;border-color:var(--rec);box-shadow:inset 0 0 0 2px var(--rec)}
+.seat:has(.seat-record:disabled){background:#f3f4f1;box-shadow:none}
+.seat-history{border-radius:99px;border-color:#cfd9cf;background:#ffffffe6;color:#3c5a4c;font-weight:600;padding:2px 9px}
+.seat-history:active{background:#e5ece3}
+.classroom-panel .space{border-radius:12px}
+.classroom-panel .space.desk{border:1px dashed #cdd7cb;background:#f7f9f5;color:#93a297}
+.teacher-view .space.aisle{background:transparent}
+.classroom-panel .board{background:var(--chalk);color:#eaf2e6;border:0;border-bottom:4px solid #9b7a48;border-radius:8px;font-weight:700;letter-spacing:.12em;box-shadow:0 2px 6px #17382b26}
+.teacher-view .seat-pan-hint{border-radius:99px;background:#fff3d6;color:#6b4a07;border:1px solid #ecd39b}
+/* Save in progress: a global, non-blocking indicator while the existing write lock is held. */
+body.busy .teacher-view::after{content:"저장·확인 중…";position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:20;padding:8px 18px;border-radius:99px;background:#17382bf0;color:#fff;font-size:14px;font-weight:700;box-shadow:0 6px 20px #0003;pointer-events:none}
+body.busy .classroom-panel .seat-record{cursor:progress}
+/* Saved / error toast is larger and easier to notice on a tablet. */
+#notice{display:flex;visibility:hidden;align-items:center;gap:10px;font-size:15px;font-weight:700;border-radius:14px;padding:14px 22px;opacity:0;transform:translate(-50%,8px);transition:opacity .18s,transform .18s,visibility 0s .18s}
+#notice.show{display:flex;visibility:visible;opacity:1;transform:translate(-50%,0);transition:opacity .18s,transform .18s}
+#notice::before{content:"✓";display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:#ffffff26}
+#notice.error::before{content:"!"}
+@media(prefers-reduced-motion:reduce){.classroom-panel .seat,#notice{transition:none}.seat:has(.seat-record:not(:disabled):active){transform:none}}
+/* Saved-record feedback, today's count and undo. Absolutely positioned: card geometry is unchanged. */
+.classroom-panel .seat.just-recorded{animation:seat-saved 1.2s ease-out}
+@keyframes seat-saved{0%{box-shadow:0 0 0 0 #2f7d4f99}30%{box-shadow:0 0 0 6px #2f7d4f55}100%{box-shadow:0 0 0 0 #2f7d4f00}}
+.plus-one{position:absolute;left:50%;top:38%;z-index:3;padding:4px 12px;border-radius:99px;background:var(--rec);color:#fff;font-size:20px;font-weight:800;pointer-events:none;transform:translate(-50%,-50%);animation:plus-one 1.3s ease-out forwards;box-shadow:0 4px 12px #17382b40}
+@keyframes plus-one{0%{opacity:0;transform:translate(-50%,-20%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}70%{opacity:1;transform:translate(-50%,-90%) scale(1)}100%{opacity:0;transform:translate(-50%,-130%) scale(1)}}
+.today-badge{position:absolute;top:4px;right:4px;z-index:2;padding:1px 7px;border-radius:99px;background:#7a4b06;color:#fff;font-size:11px;font-weight:700;line-height:18px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 3px #0003}
+#notice .notice-undo{flex:none;margin-left:6px;min-height:40px;padding:6px 14px;border:1px solid #ffffff80;border-radius:10px;background:transparent;color:#fff;font-weight:800;cursor:pointer}
+#notice .notice-undo:active{background:#ffffff26}
+#notice .notice-undo:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.classroom-panel .seat.just-recorded,.plus-one{animation:none}.plus-one{display:none}}
