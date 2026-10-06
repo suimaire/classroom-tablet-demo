@@ -89,3 +89,17 @@ a.button{display:inline-flex;align-items:center;justify-content:center;min-heigh
 .teacher-view .teacher-seating-fit.seat-compact .star>span[aria-hidden]{display:none}
 .teacher-view .teacher-seating-fit .seat .portrait{flex:0 0 var(--seat-photo-width);width:var(--seat-photo-width);min-width:0;max-width:none;height:var(--seat-photo-height);max-height:100%;object-fit:contain}
 .teacher-view .teacher-seating-fit .space.void{min-height:0}
+
+/* Separate sibling controls prevent history/cancel taps from recording attendance. */
+.seat{border:1px solid var(--line);border-radius:9px;padding-bottom:34px}
+.seat-record{position:absolute;inset:0;z-index:0;width:100%;height:100%;padding:0;background:transparent;border:0}
+.seat .identity,.seat .portrait{pointer-events:none;position:relative;z-index:1}
+.seat-history{position:absolute;left:4px;bottom:3px;z-index:2;min-height:28px;padding:2px 4px;font-size:12px;line-height:20px}
+.seat:has(.seat-record:disabled) .identity{opacity:.55}
+.teacher-view .classroom-panel .seat{padding-bottom:32px}
+.teacher-view .teacher-seating-fit .seat .portrait{align-self:flex-start;transform:translateY(0)}
+.teacher-view .teacher-seating-fit .seat .identity{align-self:center}
+.teacher-period{font-size:12px;white-space:nowrap}
+.teacher-view.class-mode .teacher-period{display:none}
+#term-menu summary{width:36px;padding:6px;font-size:18px}
+.teacher-view .teacher-seating-fit .seat .portrait{max-height:none}
