@@ -136,6 +136,7 @@ main{max-width:1200px}
 /* Add a desk next to this one. */
 .cell .add-desk{position:absolute;top:4px;right:4px;z-index:1;width:26px;height:26px;min-height:0;padding:0;border-radius:8px;border:1px solid #b9cbbd;background:#fff;color:var(--brand);font-size:17px;font-weight:800;line-height:1}
 .cell:not(.desk) .add-desk{display:none}
+.desk-undo{display:block;margin:0 0 10px;border-color:var(--brand);color:var(--brand);font-weight:800}
 #preview .cell.desk small{text-align:left;padding-right:26px}
 .add-picker{display:none}
 .cell.picking{z-index:4;border-style:solid;border-color:var(--focus)}
