@@ -103,3 +103,7 @@ a.button{display:inline-flex;align-items:center;justify-content:center;min-heigh
 .teacher-view.class-mode .teacher-period{display:none}
 #term-menu summary{width:36px;padding:6px;font-size:18px}
 .teacher-view .teacher-seating-fit .seat .portrait{max-height:none}
+
+.teacher-list .student-row{flex-wrap:wrap}
+.teacher-list .student-row>strong{overflow-wrap:anywhere;max-width:100%}
+.teacher-list .student-row>span{flex:1 1 240px}

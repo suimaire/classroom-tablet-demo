@@ -39,6 +39,8 @@ const files = [
   "admin/styles.css",
   "admin/submission-safety.js",
   "admin/teacher-accounts.js",
+  "admin/teacher-login.js",
+  "admin/credential-dialog.js",
   "admin/xlsx.mjs",
   "index.html",
   "student/THIRD-PARTY-LICENSES.txt",
