@@ -4,7 +4,7 @@ import {periodKey,periodOptions,coursesForPeriod,courseLabel,initialCourse} from
 import {createSchoolImportUI} from './school-import-ui.js?v=20261004-period-1';
 import {mountClassManagement} from './class-management.js?v=20261002-classes-1';
 import {mountPhotoSheet} from './photo-sheet.js?v=20261002-auto-1';
-import {mountTeacherAccounts} from './teacher-accounts.js?v=20261006-teacher-manage-1';
+import {mountTeacherAccounts} from './teacher-accounts.js?v=20261006-teacher-expiry-1';
 import {safeReviewPayload} from './submission-safety.js?v=20261002-students-1';
 import {mountStudentRepresentatives} from './student-representatives.js?v=20261006-credentials-1';
 import {CloudAPI,friendly} from './api.js?v=20261002-students-1';

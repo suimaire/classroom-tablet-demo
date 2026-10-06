@@ -110,3 +110,5 @@ a.button{display:inline-flex;align-items:center;justify-content:center;min-heigh
 
 /* Teacher account creation and scoped class editing. */
 .teacher-editor{margin:20px 0;padding:20px;border:1px solid var(--line);border-radius:12px;background:#f7faf6}.teacher-editor h3{margin-top:0}.teacher-editor h3:focus{outline:3px solid #3394bb;outline-offset:4px}.teacher-course-period>h4{margin:22px 0 8px}.teacher-course-period .teacher-course-list{margin-top:8px}.teacher-assign{display:flex;align-items:center;gap:8px;min-height:44px}[data-teacher-panel] input[type=text]{max-width:100%}@media(max-width:540px){.teacher-editor{padding:12px}.teacher-course-list{grid-template-columns:minmax(0,1fr)}}
+
+.teacher-bulk-expiry{margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:10px;background:#fff}.teacher-bulk-expiry h4{margin-top:0}.teacher-bulk-expiry [data-expiry-targets],.teacher-bulk-expiry [data-expiry-status]{font-size:13px;overflow-wrap:anywhere}.teacher-bulk-expiry input{max-width:360px}
