@@ -1,4 +1,5 @@
 import { loadLocalPdf, inferPdf, validatePdfDraft, expandStudentNumber } from './pdf-input.js?v=20261005-student-pdf-2';
+import {loadLocalImage} from './image-input.js?v=20261007-image-import-1';
 const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 /** PDF bytes and extracted names remain in this dialog's memory; only reviewed cells leave it. */
 export async function reviewPdfFile(file, context, options = {}) {
@@ -11,6 +12,17 @@ export async function reviewPdfFile(file, context, options = {}) {
     try { source = await loadLocalPdf(bytes, {signal: options.signal}); }
     catch (error) { if (options.signal?.aborted) return null; throw error; }
     if (options.signal?.aborted) { await source.close(); return null; }
+    return reviewSource(source, context, options);
+}
+export async function reviewImageFile(file, context, options = {}) {
+    let source;
+    try { source = await loadLocalImage(file, {signal: options.signal}); }
+    catch (error) { if (options.signal?.aborted) return null; throw error; }
+    if (options.signal?.aborted) { await source.close(); return null; }
+    return reviewSource(source, context, options, true);
+}
+async function reviewSource(source, context, options, image = false) {
+    const sourceLabel = image ? '이미지' : 'PDF';
     let renderReady = false;
     let draft;
     try {
@@ -20,9 +32,11 @@ export async function reviewPdfFile(file, context, options = {}) {
         draft = inferPdf([]);
         draft.issues.push('격자를 추론하지 못했습니다. 원본 위에 직접 입력하세요.');
     }
+    if (image) draft.issues = ['이미지는 자동으로 번호를 읽지 않습니다. 행·열과 입력칸 위치를 맞춘 뒤 모든 번호를 직접 입력하고 확인하세요.'];
     const dialog = document.createElement('dialog');
+    try {
     dialog.className = 'pdf-review';
-    dialog.innerHTML = `<header><div><small>기기 내 PDF 처리 · 외부 전송 없음</small><h2>PDF 자리표 검토</h2></div><button type="button" id="pdf-close" aria-label="PDF 검토 닫기">닫기</button></header><ol class="pdf-steps" aria-label="검토 순서"><li>교탁 방향 선택</li><li>원본 위 번호 확인</li><li>표에서 공간 확인</li><li>대조 확인 후 다음</li></ol><p class="pdf-target">대상 <strong>${escape(context.classLabel)}</strong> · ${options.remote ? '배부받은 접두' : '관리자 확인 접두'} <strong>${escape(context.prefix)}</strong><br>개인 번호 34 → ${escape(context.prefix)}34. 이름으로 학생을 추측하지 않습니다.</p>${options.remote ? '<p class="notice">서버에서는 등록 학번과 자리 정보만 확인합니다. 이름은 이 기기의 원본 대조용으로만 표시하고 전송하지 않습니다. 최종 제출 시 학번 전체와 현재 기준 버전을 검증합니다.</p>' : ''}<p id="pdf-detected"></p><div id="pdf-warnings" class="notice warning"></div><h3 class="pdf-step-title" data-step="1">교탁 방향 · 격자 확인</h3><div class="pdf-controls"><label>원본 교탁 방향<select id="pdf-board"><option value="">방향 확인 필요</option><option value="top">위쪽</option><option value="bottom">아래쪽 (이중 회전 없음)</option></select></label><button id="pdf-manual" type="button">수동 격자로 다시 입력</button><button id="pdf-overlay-toggle" type="button">입력 격자 숨기기 / 보기</button></div><details id="pdf-manual-options"><summary>격자 크기 · 원본 위 위치 조정</summary><p>행·열은 통로를 포함합니다. 원본에 맞게 입력칸 위치를 조절하고 아래 표에서 통로·빈자리도 확인하세요.</p><div class="pdf-controls"><label>행<input id="pdf-rows" type="number" min="1" max="30" value="${draft.rows}"></label><label>열 (통로 포함)<input id="pdf-cols" type="number" min="1" max="30" value="${draft.cols}"></label><button type="button" id="pdf-resize">격자 크기 적용 (번호 초기화)</button>${[['left', '왼쪽', 8], ['top', '위쪽', 25], ['width', '너비', 84], ['height', '높이', 48]].map(([id, label, value]) => `<label>${label} %<input data-bound="${id}" type="number" min="0" max="100" value="${value}"></label>`).join('')}</div></details><h3 class="pdf-step-title" data-step="2">원본 위 번호 확인</h3><p class="pdf-hint"><span class="pdf-key filled">20134</span> 번호가 들어간 자리 <span class="pdf-key empty">빈자리</span> 비어 있는 책상 · 칸을 눌러 바로 고칠 수 있어요.</p><div class="pdf-scroll"><div class="pdf-paper"><canvas id="pdf-canvas" aria-label="선택한 PDF 원본"></canvas><div id="pdf-overlay"></div></div></div><p class="pdf-hint">책상을 추가하려면 원본 대조를 마친 뒤 ‘이 배치로 미리보기’를 누르고, 미리보기에서 책상 모서리의 ‘+’를 누르세요. 원본 PDF 위 입력 격자는 변경하지 않습니다.</p><h3 class="pdf-step-title" data-step="3">표에서 공간 · 번호 수정</h3><p>번호를 비우면 빈 책상입니다. 이름이 다른 경우 원본·명렬을 확인한 뒤 수정하세요. 추출 결과는 아직 자리표에 반영되지 않았습니다.</p><div class="pdf-table-wrap"><table><thead><tr><th>원본 좌표</th><th>공간</th><th>개인 번호 / 전체 학번</th><th>이름 대조</th></tr></thead><tbody id="pdf-cells"></tbody></table></div><div class="dialog-actions"><div id="pdf-placement" role="status" hidden></div><div id="pdf-errors" class="notice warning" role="status"></div><label class="pdf-confirm"><input type="checkbox" id="pdf-confirm"> 원본의 학급·전체 자리·빈자리·통로·교탁 방향과 추출 경고를 모두 대조했습니다</label><button class="primary" id="pdf-next" disabled>${escape(options.continueLabel ?? '교사 검토함으로 보내기')}</button></div>`;
+    dialog.innerHTML = `<header><div><small>기기 내 ${sourceLabel} 처리 · 외부 전송 없음</small><h2>${sourceLabel} 자리표 검토</h2></div><button type="button" id="pdf-close" aria-label="${sourceLabel} 검토 닫기">닫기</button></header><ol class="pdf-steps" aria-label="검토 순서"><li>교탁 방향 선택</li><li>원본 위 번호 확인</li><li>표에서 공간 확인</li><li>대조 확인 후 다음</li></ol><p class="pdf-target">대상 <strong>${escape(context.classLabel)}</strong> · ${options.remote ? '배부받은 접두' : '관리자 확인 접두'} <strong>${escape(context.prefix)}</strong><br>개인 번호 34 → ${escape(context.prefix)}34. 이름으로 학생을 추측하지 않습니다.</p>${options.remote ? '<p class="notice">서버에서는 등록 학번과 자리 정보만 확인합니다. 이름은 이 기기의 원본 대조용으로만 표시하고 전송하지 않습니다. 최종 제출 시 학번 전체와 현재 기준 버전을 검증합니다.</p>' : ''}<p id="pdf-detected"></p><div id="pdf-warnings" class="notice warning"></div><h3 class="pdf-step-title" data-step="1">교탁 방향 · 격자 확인</h3><div class="pdf-controls"><label>원본 교탁 방향<select id="pdf-board"><option value="">방향 확인 필요</option><option value="top">위쪽</option><option value="bottom">아래쪽 (이중 회전 없음)</option></select></label><button id="pdf-manual" type="button">수동 격자로 다시 입력</button><button id="pdf-overlay-toggle" type="button">입력 격자 숨기기 / 보기</button></div><details id="pdf-manual-options"><summary>격자 크기 · 원본 위 위치 조정</summary><p>행·열은 통로를 포함합니다. 원본에 맞게 입력칸 위치를 조절하고 아래 표에서 통로·빈자리도 확인하세요.</p><div class="pdf-controls"><label>행<input id="pdf-rows" type="number" min="1" max="30" value="${draft.rows}"></label><label>열 (통로 포함)<input id="pdf-cols" type="number" min="1" max="30" value="${draft.cols}"></label><button type="button" id="pdf-resize">격자 크기 적용 (번호 초기화)</button>${[['left', '왼쪽', 8], ['top', '위쪽', 25], ['width', '너비', 84], ['height', '높이', 48]].map(([id, label, value]) => `<label>${label} %<input data-bound="${id}" type="number" min="0" max="100" value="${value}"></label>`).join('')}</div></details><h3 class="pdf-step-title" data-step="2">원본 위 번호 확인</h3><p class="pdf-hint"><span class="pdf-key filled">20134</span> 번호가 들어간 자리 <span class="pdf-key empty">빈자리</span> 비어 있는 책상 · 칸을 눌러 바로 고칠 수 있어요.</p><div class="pdf-scroll"><div class="pdf-paper"><canvas id="pdf-canvas" aria-label="선택한 ${sourceLabel} 원본"></canvas><div id="pdf-overlay"></div></div></div><p class="pdf-hint">책상을 추가하려면 원본 대조를 마친 뒤 ‘이 배치로 미리보기’를 누르고, 미리보기에서 책상 모서리의 ‘+’를 누르세요. 원본 위 입력 격자는 변경하지 않습니다.</p><h3 class="pdf-step-title" data-step="3">표에서 공간 · 번호 수정</h3><p>번호를 비우면 빈 책상입니다. 이름이 다른 경우 원본·명렬을 확인한 뒤 수정하세요. 추출 결과는 아직 자리표에 반영되지 않았습니다.</p><div class="pdf-table-wrap"><table><thead><tr><th>원본 좌표</th><th>공간</th><th>개인 번호 / 전체 학번</th><th>이름 대조</th></tr></thead><tbody id="pdf-cells"></tbody></table></div><div class="dialog-actions"><div id="pdf-placement" role="status" hidden></div><div id="pdf-errors" class="notice warning" role="status"></div><label class="pdf-confirm"><input type="checkbox" id="pdf-confirm"> 원본의 학급·전체 자리·빈자리·통로·교탁 방향과 추출 경고를 모두 대조했습니다</label><button class="primary" id="pdf-next" disabled>${escape(options.continueLabel ?? '교사 검토함으로 보내기')}</button></div>`;
     document.body.append(dialog);
     dialog.showModal();
     const q = (s) => dialog.querySelector(s);
@@ -37,12 +51,13 @@ export async function reviewPdfFile(file, context, options = {}) {
         const value = Math.max(0, Math.min(100, Number(input.value) || 0));
         o.style[key] = value + '%';
     } confirm.checked = false; check(); }
-    function rows() { q('#pdf-detected').textContent = `추출 제목: ${draft.classLabel || '없음 — 대상 학급을 원본에서 직접 확인'} · ${draft.rows}행 × ${draft.cols}열 (통로 포함)${draft.scanned ? ' · 수동 입력' : ''}`; q('#pdf-warnings').textContent = ['간격으로 추정한 통로와 빈자리는 반드시 원본과 대조하세요.', ...draft.issues].join(' '); q('#pdf-cells').innerHTML = draft.cells.map((c, i) => `<tr><td>${c.row}행 ${c.col}열</td><td><select data-index="${i}" data-field="kind" aria-label="${c.row}행 ${c.col}열 공간">${[['desk', '책상'], ['aisle', '통로'], ['void', '제외']].map(([value, label]) => `<option value="${value}" ${c.kind === value ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td><input data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="${c.row}행 ${c.col}열 번호" ${c.kind !== 'desk' ? 'disabled' : ''}></td><td><input data-index="${i}" data-field="name" maxlength="50" value="${escape(c.name)}" aria-label="${c.row}행 ${c.col}열 이름" ${c.kind !== 'desk' ? 'disabled' : ''}></td></tr>`).join(''); const o = q('#pdf-overlay'); o.classList.toggle('card-aligned',!!draft.sourceGrid?.cardBoxes); o.style.gridTemplateColumns = draft.sourceGrid?.columnWidths ? draft.sourceGrid.columnWidths.map(w => `minmax(0,${w}fr)`).join(' ') : `repeat(${draft.cols},minmax(0,1fr))`; o.style.gridTemplateRows = `repeat(${draft.rows},1fr)`; o.innerHTML = draft.cells.map((c, i) => { const g=draft.sourceGrid,box=g?.cardBoxes?.find(b=>b.row===c.row&&b.col===c.col); const placement=box?`left:${(box.left-g.left+box.width/2)/g.width*100}%;top:${(box.top-g.top+box.height/2)/g.height*100}%;width:${box.width/g.width*100}%;max-height:${box.height/g.height*100}%`:''; return c.kind === 'desk' ? `<input style="${placement}" class="pdf-seat-number" data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="원본 위 ${c.row}행 ${c.col}열 번호" placeholder="빈자리">` : `<span class="pdf-space">${c.kind === 'aisle' ? '통로' : '제외'}</span>`; }).join(''); check(true); }
+    function rows() { q('#pdf-detected').textContent = `${image ? '이미지 제목: 직접 확인' : '추출 제목: ' + (draft.classLabel || '없음 — 대상 학급을 원본에서 직접 확인')} · ${draft.rows}행 × ${draft.cols}열 (통로 포함)${draft.scanned ? ' · 수동 입력' : ''}`; q('#pdf-warnings').textContent = ['간격으로 추정한 통로와 빈자리는 반드시 원본과 대조하세요.', ...draft.issues].join(' '); q('#pdf-cells').innerHTML = draft.cells.map((c, i) => `<tr><td>${c.row}행 ${c.col}열</td><td><select data-index="${i}" data-field="kind" aria-label="${c.row}행 ${c.col}열 공간">${[['desk', '책상'], ['aisle', '통로'], ['void', '제외']].map(([value, label]) => `<option value="${value}" ${c.kind === value ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td><input data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="${c.row}행 ${c.col}열 번호" ${c.kind !== 'desk' ? 'disabled' : ''}></td><td><input data-index="${i}" data-field="name" maxlength="50" value="${escape(c.name)}" aria-label="${c.row}행 ${c.col}열 이름" ${c.kind !== 'desk' ? 'disabled' : ''}></td></tr>`).join(''); const o = q('#pdf-overlay'); o.classList.toggle('card-aligned',!!draft.sourceGrid?.cardBoxes); o.style.gridTemplateColumns = draft.sourceGrid?.columnWidths ? draft.sourceGrid.columnWidths.map(w => `minmax(0,${w}fr)`).join(' ') : `repeat(${draft.cols},minmax(0,1fr))`; o.style.gridTemplateRows = `repeat(${draft.rows},1fr)`; o.innerHTML = draft.cells.map((c, i) => { const g=draft.sourceGrid,box=g?.cardBoxes?.find(b=>b.row===c.row&&b.col===c.col); const placement=box?`left:${(box.left-g.left+box.width/2)/g.width*100}%;top:${(box.top-g.top+box.height/2)/g.height*100}%;width:${box.width/g.width*100}%;max-height:${box.height/g.height*100}%`:''; return c.kind === 'desk' ? `<input style="${placement}" class="pdf-seat-number" data-index="${i}" data-field="rawNumber" inputmode="numeric" maxlength="5" value="${escape(c.rawNumber)}" aria-label="원본 위 ${c.row}행 ${c.col}열 번호" placeholder="빈자리">` : `<span class="pdf-space">${c.kind === 'aisle' ? '통로' : '제외'}</span>`; }).join(''); check(true); }
     if (draft.sourceGrid) {
         const g = draft.sourceGrid;
         for (const key of ['left', 'top', 'width', 'height'])
             q(`[data-bound="${key}"]`).value = String(g[key] / (['left', 'width'].includes(key) ? source.width : source.height) * 100);
     }
+    if (image) q('#pdf-manual-options').open = true;
     rows();
     bounds();
     dialog.oninput = e => { const t = e.target; if (t.dataset.bound) {
@@ -77,14 +92,13 @@ export async function reviewPdfFile(file, context, options = {}) {
     q('#pdf-manual').onclick = manual;
     q('#pdf-resize').onclick = manual;
     q('#pdf-overlay-toggle').onclick = () => { q('#pdf-overlay').hidden = !q('#pdf-overlay').hidden; };
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
         let done = false;
         const finish = (result, error) => {
             if (done) return;
             done = true;
             options.signal?.removeEventListener('abort', abort);
             dialog.close(); dialog.remove();
-            void source.close().catch(() => {});
             if (error) reject(error); else resolve(result);
         };
         const abort = () => finish(null);
@@ -94,7 +108,11 @@ export async function reviewPdfFile(file, context, options = {}) {
         next.onclick = () => { const r = check(); if (renderReady && !r.errors.length && confirm.checked) finish(r.layout); };
         if (options.signal?.aborted) { finish(null); return; }
         source.render(q('#pdf-canvas')).then(() => { if (!done) { renderReady = true; check(); options.onReady?.(); } }).catch(() => {
-            if (!done) finish(null, Error('이 브라우저에서 PDF 원본을 렌더링하지 못했습니다. 최신 브라우저 또는 XLSX 양식을 사용하세요.'));
+            if (!done) finish(null, Error(`이 브라우저에서 ${sourceLabel} 원본을 표시하지 못했습니다. 최신 브라우저 또는 XLSX 양식을 사용하세요.`));
         });
     });
+    } finally {
+        dialog.remove();
+        await source.close().catch(() => {});
+    }
 }

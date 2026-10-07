@@ -50,6 +50,8 @@ const files = [
   "student/config.json",
   "student/core.js",
   "student/excel.js",
+  "student/file-input.js",
+  "student/image-input.js",
   "student/index.html",
   "student/jbig2_nowasm_fallback.js",
   "student/layout.js",
