@@ -1,4 +1,4 @@
-import {PersonalAPI,friendly} from './api.js';
+import {PersonalAPI,friendly} from './api.js?v=20261007-personal-fetch-2';
 import {RecordsSession} from './session.js';
 import {h,formatDate} from './model.js';
 const api=new PersonalAPI(),q=id=>document.getElementById(id);let session=null,available=false;

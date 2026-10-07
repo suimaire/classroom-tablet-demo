@@ -2,7 +2,7 @@ import {personalAuthEmail} from './model.js';
 export class PersonalAPIError extends Error{constructor(code,status=0){super(code);this.code=code;this.status=status;}}
 const wipe=body=>{if(body&&typeof body==='object'){if('password'in body)body.password='';if('currentPassword'in body)body.currentPassword='';}};
 export class PersonalAPI{
- constructor({fetch:fetcher=globalThis.fetch}={}){this.fetch=fetcher;this.access='';this.refresh='';this.expires=0;this.refreshing=null;this.generation=0;}
+ constructor({fetch:fetcher=globalThis.fetch.bind(globalThis)}={}){this.fetch=fetcher;this.access='';this.refresh='';this.expires=0;this.refreshing=null;this.generation=0;}
  async init(){const r=await this.fetch(new URL('./config.json',import.meta.url),{cache:'no-store'});if(!r.ok)throw Error('서버 설정을 읽을 수 없습니다.');this.config=await r.json();if(this.config.enabled!==true||!this.config.publishableKey?.startsWith('sb_publishable_'))throw Error('개인 계정 설정이 완료되지 않았습니다.');personalAuthEmail('10101',this.config);return this.config;}
  async request(path,body,token){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);let serialized='';
