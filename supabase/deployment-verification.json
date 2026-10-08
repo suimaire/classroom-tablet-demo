@@ -1,0 +1,53 @@
+{
+  "functions": [
+    {
+      "name": "hafs_record_guarded",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "arguments": "p_course uuid, p_request uuid, p_student uuid, p_version bigint, p_confirmed_day date, p_confirmed_count bigint",
+      "anon_execute": false,
+      "security_definer": true,
+      "authenticated_execute": true,
+      "source_matches": true
+    },
+    {
+      "name": "hafs_teacher_day_counts",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "arguments": "p_course uuid, p_day date",
+      "anon_execute": false,
+      "security_definer": true,
+      "authenticated_execute": true,
+      "source_matches": true
+    }
+  ],
+  "migration": {
+    "name": "classroom_daily_confirmation",
+    "version": "20261008005624"
+  },
+  "alias_table": {
+    "rls": true,
+    "rows": 0,
+    "anon_select": false,
+    "authenticated_insert": false,
+    "authenticated_select": false
+  },
+  "legacy_hashes": {
+    "hafs_undo": "30252b9c6a15fbbc9d4a448706c2ca46",
+    "hafs_record": "42a08e1eb085d21063522ff9ebf59922",
+    "hafs_teacher_snapshot": "461546f73fc1cdd52bc626a8599ea082"
+  },
+  "verified_at_utc": "2026-10-08T00:57:17Z",
+  "project_id": "mchisnymlincoejkxmxm",
+  "tests": {
+    "backend": 12,
+    "frontend": 85,
+    "failed": 0
+  },
+  "unauthenticated_rpc_probes": "Both returned 42501 NOT_AUTHORIZED",
+  "concurrent_session_execution": "Not executed: local Unix socket denied; sandbox escalation launcher failed",
+  "synthetic_data_only": true,
+  "migration_sha256": "a06248ac28e44671b883bae0ad8284c6b19dfa811131a2f8c2c23a8736f08b97"
+}

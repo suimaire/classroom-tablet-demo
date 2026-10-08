@@ -1,4 +1,4 @@
-import {friendly} from './api.js?v=20261002-students-1';
+import {friendly} from './api.js?v=20261008-session-1';
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const terminal=new Set(['INVALID_CLASS','CLASS_YEAR_NOT_ALLOWED','CLASS_ALREADY_EXISTS','CLASS_LIMIT_REACHED','IDEMPOTENCY_CONFLICT','NOT_AUTHORIZED','AUTH_USER_INACTIVE','PGRST202']);
 const messages={PGRST202:'필요한 학급 생성 서버 기능이 아직 배포되지 않았습니다.',INVALID_CLASS:'학년도·학기·학년·반·분반을 확인하세요.',CLASS_YEAR_NOT_ALLOWED:'생성 권한에 포함된 학년도를 선택하세요.',CLASS_ALREADY_EXISTS:'같은 학년도·학기·학년·반·분반이 이미 있습니다. 상단 새로고침을 누르고 학급 선택 목록을 확인하세요.',CLASS_LIMIT_REACHED:'허용된 학급 생성 수를 모두 사용했습니다. 관리자에게 확인하세요.',IDEMPOTENCY_CONFLICT:'직전 요청 내용과 다릅니다. 학급 목록을 확인한 뒤 다시 시작하세요.',NOT_AUTHORIZED:'학급 생성 권한이 없거나 만료되었습니다. 다시 로그인하거나 관리자에게 확인하세요.'};

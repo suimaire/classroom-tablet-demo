@@ -8,6 +8,8 @@ const files = [
   "admin/THIRD-PARTY-LICENSES.txt",
   "admin/api.js",
   "admin/app.js",
+  "admin/participation.js",
+  "admin/seat-fit.js",
   "admin/binary-assets.json",
   "admin/class-management.css",
   "admin/class-management.js",

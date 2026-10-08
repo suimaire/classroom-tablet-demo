@@ -1,9 +1,9 @@
-import {friendly} from './api.js?v=20261002-students-1';
+import {friendly} from './api.js?v=20261008-session-1';
 import {chooseRosterSheet} from './sheet-selection.js?v=20261004-formula-1';
 import {csvParse} from './core.js';
 import {readSchoolRosterXlsx} from './excel.js?v=20261004-formula-1';
 import {parseSchoolBlocks} from './school-roster.js?v=20261004-footer-1';
-import {createSchoolImport,sameClass} from './school-import.js?v=20261004-flow-1';
+import {createSchoolImport,sameClass} from './school-import.js?v=20261008-classroom-1';
 import {h} from './model.js?v=20261004-formula-1';
 const label=g=>`${g.schoolYear}학년도 ${g.term}학기 · ${g.grade}학년 ${g.classNumber}${g.section}반`;
 const status={ready:'대기',creating:'생성 결과 확인 필요',unknown:'저장 결과 확인 필요',done:'완료',failed:'중단 · 다시 검토 필요'};

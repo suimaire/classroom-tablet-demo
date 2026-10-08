@@ -258,3 +258,113 @@ button.chip{min-height:0;cursor:pointer}
 button.chip.missing:hover{background:#ffe7b3}
 .chip.problem{background:#fde7e4;color:#9b2c1f;border:1px solid #f1b7ae}
 @media(max-width:750px){.admin-view>.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.admin-view>.stats .stat{display:block;padding:8px 10px}.admin-view>.stats .stat strong{font-size:18px}.admin-nav .tabs{flex-wrap:wrap}.admin-nav .tabs button{min-height:36px;padding:6px 10px;font-size:13px}.layout-steps{grid-template-columns:1fr}.layout-savebar{margin:12px -13px -13px;padding:10px 13px}.layout-actions{width:100%}.layout-actions button{flex:1}}
+
+/* Phone auto-fit uses the entire safe viewport without changing source cells. */
+.teacher-view.teacher-phone-layout{padding:max(4px,env(safe-area-inset-top)) max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left))}
+.teacher-phone-layout .teacher-top{gap:4px}
+.teacher-phone-layout .teacher-top #course-selectors{gap:4px;min-width:0}
+.teacher-phone-layout .teacher-course{min-width:0;max-width:none}
+.teacher-phone-layout .teacher-period{font-size:10px}
+.teacher-phone-layout .teacher-tools button,.teacher-phone-layout .teacher-tools summary,.teacher-phone-layout .teacher-course .course-picker{min-height:32px;padding:4px 7px;font-size:12px}
+.teacher-phone-layout .teacher-course .course-picker{font-size:14px}
+.teacher-phone-layout .teacher-tools #term-menu summary{width:28px;padding:3px;font-size:16px}
+.teacher-phone-layout .teacher-nav{gap:4px;margin-top:3px}
+.teacher-phone-layout .teacher-nav .tabs{gap:2px;padding:2px}
+.teacher-phone-layout .teacher-nav .tabs button{min-height:28px;padding:3px 7px;font-size:11px}
+.teacher-phone-layout .teacher-summary{font-size:10px;line-height:1.2}
+.teacher-phone-layout .classroom-panel{padding:3px;margin:4px 0;border-radius:9px}
+.teacher-phone-layout .classroom-panel>header{display:none}
+.teacher-phone-layout .board{font-size:10px;line-height:12px;padding:1px;margin-top:3px;border-bottom-width:2px}
+.teacher-phone-layout .teacher-seating-fit .grid-scroll{overflow:hidden}
+.teacher-phone-layout .teacher-seating-fit .seat-grid{min-width:0}
+.teacher-phone-layout .teacher-seating-fit .seat{gap:2px;min-height:0;min-width:0;border-radius:5px;padding:2px;box-shadow:none}
+.teacher-phone-layout .teacher-seating-fit .seat-record{min-height:0;border-radius:4px}
+.teacher-phone-layout .teacher-seating-fit .seat .identity{min-width:0;flex:1 1 0;line-height:1.1}
+.teacher-phone-layout .teacher-seating-fit .identity b{min-width:0;min-height:0;margin:0 0 1px;line-height:1.1;overflow-wrap:anywhere}
+.teacher-phone-layout .teacher-seating-fit .identity small{line-height:1.1;letter-spacing:-.3px}
+.teacher-phone-layout .teacher-seating-fit .identity .star{margin:0;line-height:1.1}
+.teacher-phone-layout .teacher-seating-fit .identity .star>span[aria-hidden]{display:none}
+.teacher-phone-layout .teacher-seating-fit .seat-history{min-height:20px;line-height:16px;padding:0 2px;font-size:10px;border-radius:4px;box-shadow:none}
+.teacher-phone-layout .teacher-seating-fit .space{border-radius:5px;font-size:9px;overflow:hidden}
+.teacher-phone-layout .teacher-seating-fit .today-badge{top:1px;right:1px;padding:0 3px;line-height:12px;font-size:8px}
+.teacher-phone-layout .teacher-seating-fit .seat.recorded{box-shadow:inset 0 2px 0 var(--rec)}
+/* Portrait prioritizes the full seating overview, with the photo available in history. */
+.teacher-phone-layout .seat-phone-portrait .seat{padding-bottom:23px}
+.teacher-phone-layout .seat-phone-portrait .seat .portrait{display:none}
+.teacher-phone-layout .seat-phone-portrait .identity b{font-size:var(--seat-name-size)}
+.teacher-phone-layout .seat-phone-portrait .seat-history{left:2px;right:2px;bottom:2px;width:calc(100% - 4px);white-space:nowrap}
+/* In landscape a compact identity, photo, and separate history target share a row. */
+.teacher-phone-layout .seat-phone-landscape .seat{padding:1px 2px}
+.teacher-phone-layout .seat-phone-landscape .seat .identity{display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:center;column-gap:2px;row-gap:1px}
+.teacher-phone-layout .seat-phone-landscape .identity b{grid-column:1/-1;margin:0;font-size:var(--seat-name-size);line-height:1.1}
+.teacher-phone-layout .seat-phone-landscape .identity small{font-size:var(--seat-number-size)}
+.teacher-phone-layout .seat-phone-landscape .identity .star{font-size:var(--seat-count-size);align-self:center}
+.teacher-phone-layout .seat-phone-landscape .seat .portrait{display:block;align-self:center;border-radius:3px;max-height:100%;object-fit:contain}
+.teacher-phone-layout .seat-phone-landscape .seat-history{position:relative;inset:auto;align-self:stretch;flex:0 0 18px;width:18px;min-width:0;min-height:0;order:2;font-size:0;padding:0;border-color:transparent;background:#edf2eb}
+.teacher-phone-layout .seat-phone-landscape .seat-history::after{content:'⋯';font-size:14px;line-height:1}
+.teacher-phone-layout .seat-phone-landscape .today-badge{right:22px;top:1px;font-size:7px;line-height:10px;padding:0 2px}
+@media(orientation:landscape){
+ .teacher-phone-layout .teacher-top{flex-wrap:nowrap}
+ .teacher-phone-layout .teacher-top #course-selectors{flex-basis:auto}
+ .teacher-phone-layout .teacher-nav{flex-direction:row;align-items:center}
+ .teacher-phone-layout .teacher-summary{white-space:nowrap}
+ .teacher-phone-layout .teacher-popover{position:fixed;top:max(42px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));max-height:calc(100dvh - 56px);overflow:auto}
+}
+/* Native date controls must be allowed to shrink inside iPad flex/grid tracks. */
+.history-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) max-content;align-items:end;gap:12px}
+.history-filters>label{min-width:0;max-width:100%;margin:10px 0}
+.history-filters input[type=date]{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px}
+.history-filters input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:left}
+.history-filters>button{margin-bottom:10px;max-width:100%}
+@media(max-width:800px){.history-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.history-filters>button{grid-column:1/-1;justify-self:start;margin:0}.history-filters>label{margin-bottom:0}}
+@media(max-width:480px){.history-filters{grid-template-columns:minmax(0,1fr)}.history-filters>button{justify-self:stretch}}
+
+/* Daily/cumulative controls stay readable on tablets and shrink as one phone bar. */
+.participation-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:8px 0 4px;min-width:0}
+.count-modes{display:inline-flex;gap:3px;padding:3px;border-radius:10px;background:#e2eade;flex:none}
+.count-modes button{min-height:36px;padding:5px 12px;border:0;background:transparent;white-space:nowrap;font-size:13px;font-weight:700}
+.count-modes button.active{background:var(--ink);color:#fff;box-shadow:0 1px 3px #17382b26}
+.participation-date{display:flex;align-items:center;gap:6px;min-width:0;margin:0;font-size:12px;white-space:nowrap}
+.participation-date input[type=date]{width:154px;min-width:0;max-width:100%;min-height:36px;padding:4px 6px;font-size:13px}
+.participation-date input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:left}
+#participation-today{min-height:36px;padding:5px 10px;font-size:12px}
+.participation-note{font-size:12px;line-height:1.25;margin:4px 0 8px;color:var(--muted)}
+.mode-description{font-size:12px;line-height:1.25;color:var(--muted)}
+.teacher-phone-layout .participation-controls{gap:3px 5px;margin:1px 0 2px}
+.teacher-phone-layout .count-modes{gap:1px;padding:2px;border-radius:6px}
+.teacher-phone-layout .count-modes button{min-height:26px;padding:3px 6px;font-size:10px;border-radius:5px}
+.teacher-phone-layout .participation-date{gap:3px;font-size:10px}
+.teacher-phone-layout .participation-date input[type=date]{width:118px;min-height:28px;padding:2px 3px;font-size:11px;border-radius:5px}
+.teacher-phone-layout #participation-today{min-height:26px;padding:2px 5px;font-size:10px;border-radius:5px}
+.teacher-phone-layout .participation-note{font-size:9px;line-height:12px;margin:1px 0 3px}
+.teacher-phone-layout .mode-description{font-size:10px}
+@media(orientation:landscape){
+ .teacher-phone-layout .teacher-tools{display:flex;align-items:center;gap:4px}
+ .teacher-phone-layout .teacher-top{flex:1;min-width:0}
+ .teacher-phone-layout .teacher-nav{flex:none;margin-top:0}
+ .teacher-phone-layout .teacher-nav [data-tab=class],.teacher-phone-layout .teacher-summary{display:none}
+ .teacher-phone-layout .teacher-nav .tabs{padding:0;background:transparent}
+ .teacher-phone-layout .teacher-nav .tabs button{min-height:32px;padding:4px 7px;border:1px solid var(--line);background:white}
+ .teacher-phone-layout .teacher-period{display:none}
+ .teacher-phone-layout .participation-controls{flex-wrap:nowrap}
+ .teacher-phone-layout .participation-note{font-size:9px;line-height:11px;margin-bottom:2px}
+}
+/* Keep the selector and essential navigation in two short rows in portrait. */
+.teacher-phone-layout .teacher-top{flex-wrap:nowrap}
+.teacher-phone-layout .teacher-top #course-selectors{flex-basis:auto}
+.teacher-phone-layout .teacher-period,.teacher-phone-layout .teacher-summary{display:none}
+.teacher-phone-layout .teacher-nav{flex-direction:row;align-items:center}
+.teacher-phone-layout .seat-phone-portrait .seat .identity{display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:center;column-gap:2px;row-gap:1px}
+.teacher-phone-layout .seat-phone-portrait .identity b{grid-column:1/-1}
+.teacher-phone-layout .seat-phone-tight .identity small{display:none}
+.teacher-phone-layout .seat-phone-tight .identity .star{grid-column:1/-1}
+/* The photograph is the separate history target; text remains the record target. */
+.teacher-phone-layout .seat-phone-landscape .seat-history{position:absolute;right:2px;top:1px;bottom:1px;left:auto;width:var(--seat-photo-width);height:auto;min-height:0;border:0;border-radius:3px;background:transparent;display:flex;align-items:flex-end;justify-content:center}
+.teacher-phone-layout .seat-phone-landscape .seat-history::after{content:'기록';font-size:8px;line-height:9px;color:white;background:#173b34cf;border-radius:2px;padding:0 2px}
+.teacher-phone-layout .seat-phone-landscape .seat-history:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.teacher-phone-layout .seat-phone-landscape .today-badge{right:2px}
+.teacher-phone-layout .seat-phone-landscape .seat .portrait.initial{display:flex;align-items:center;justify-content:center;font-size:18px}
+/* Eight-column portrait cards keep a readable short cue and three-character name. */
+.teacher-phone-layout .seat-phone-portrait.seat-phone-tight .seat{padding-left:1px;padding-right:1px}
+.teacher-phone-layout .seat-phone-portrait.seat-phone-tight .seat-history{font-size:0}
+.teacher-phone-layout .seat-phone-portrait.seat-phone-tight .seat-history::after{content:'기록';font-size:10px;line-height:16px}
