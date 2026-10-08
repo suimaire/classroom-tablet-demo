@@ -1,3 +1,4 @@
+import {resizePdfGrid, addPdfGridEdge} from '../shared/pdf-grid.js?v=20261008-grid-preserve-1';
 import { loadLocalPdf, inferPdf, validatePdfDraft, resolvePdfStudent } from './pdf-input.js?v=20261004-admin-pdf-1';
 const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 /** PDF bytes and extracted names remain in this dialog's memory; only reviewed cells leave it. */
@@ -22,7 +23,7 @@ export async function reviewPdfFile(file, context, options = {}) {
     }
     const dialog = document.createElement('dialog');
     dialog.className = 'pdf-review';
-    dialog.innerHTML = `<header><div><small>기기 내 PDF 처리 · 외부 전송 없음</small><h2>PDF 자리표 검토</h2></div><button type="button" id="pdf-close" aria-label="PDF 검토 닫기">닫기</button></header><p>대상 <strong>${escape(context.classLabel)}</strong> · 기준 버전 <strong>${escape(context.version ?? '')}</strong><br>PDF 개인 번호는 선택 학급 명단의 학번 끝 두 자리와 연결하고 이름을 대조합니다. 모호한 번호는 전체 학번 5자리로 직접 확인하세요.</p><p>PDF에 적힌 날짜는 원본 참고 정보입니다. 이 파일은 아직 현재 자리표에 반영되지 않았습니다. 결석한 학생도 모든 재적 학생과 함께 한 번씩 배치해야 합니다.</p>${options.remote ? '<p class="notice">서버 명렬은 이 화면에서 조회하지 않습니다. 이름은 원본 대조용으로만 표시하고 전송하지 않습니다. 등록 여부·전체 명렬·현재 버전은 제출 서버가 검증합니다.</p>' : ''}<p id="pdf-detected"></p><div id="pdf-warnings" class="notice warning"></div><div class="pdf-controls"><label>원본 교탁 방향<select id="pdf-board"><option value="">방향 확인 필요</option><option value="top">위쪽</option><option value="bottom">아래쪽 (이중 회전 없음)</option></select></label><button id="pdf-manual" type="button">수동 격자로 다시 입력</button><button id="pdf-overlay-toggle" type="button">입력 격자 숨기기 / 보기</button></div><details id="pdf-manual-options"><summary>격자 크기 · 원본 위 위치 조정</summary><p>행·열은 통로를 포함합니다. 원본에 맞게 입력칸 위치를 조절하고 아래 표에서 통로·빈자리도 확인하세요.</p><div class="pdf-controls"><label>행<input id="pdf-rows" type="number" min="1" max="30" value="${draft.rows}"></label><label>열 (통로 포함)<input id="pdf-cols" type="number" min="1" max="30" value="${draft.cols}"></label><button type="button" id="pdf-resize">격자 크기 적용 (번호 초기화)</button>${[['left', '왼쪽', 8], ['top', '위쪽', 25], ['width', '너비', 84], ['height', '높이', 48]].map(([id, label, value]) => `<label>${label} %<input data-bound="${id}" type="number" min="0" max="100" value="${value}"></label>`).join('')}</div></details><div class="pdf-scroll"><div class="pdf-paper"><canvas id="pdf-canvas" aria-label="선택한 PDF 원본"></canvas><div id="pdf-overlay"></div></div></div><h3>추출 내용 수정</h3><p>번호를 비우면 빈 책상입니다. 이름이 다른 경우 원본·명렬을 확인한 뒤 수정하세요. 추출 결과는 아직 자리표에 반영되지 않았습니다.</p><div class="pdf-table-wrap"><table><thead><tr><th>원본 좌표</th><th>공간</th><th>개인 번호 / 전체 학번</th><th>PDF 이름 확인</th><th>등록 학번 · 이름</th></tr></thead><tbody id="pdf-cells"></tbody></table></div><div id="pdf-errors" class="notice warning" role="status"></div><label class="pdf-confirm"><input type="checkbox" id="pdf-confirm"> 원본의 학급·전체 자리·빈자리·통로·교탁 방향과 추출 경고를 모두 대조했습니다</label><div class="dialog-actions"><button class="primary" id="pdf-next" disabled>${escape(options.continueLabel ?? '교사 검토함으로 보내기')}</button></div>`;
+    dialog.innerHTML = `<header><div><small>기기 내 PDF 처리 · 외부 전송 없음</small><h2>PDF 자리표 검토</h2></div><button type="button" id="pdf-close" aria-label="PDF 검토 닫기">닫기</button></header><p>대상 <strong>${escape(context.classLabel)}</strong> · 기준 버전 <strong>${escape(context.version ?? '')}</strong><br>PDF 개인 번호는 선택 학급 명단의 학번 끝 두 자리와 연결하고 이름을 대조합니다. 모호한 번호는 전체 학번 5자리로 직접 확인하세요.</p><p>PDF에 적힌 날짜는 원본 참고 정보입니다. 이 파일은 아직 현재 자리표에 반영되지 않았습니다. 결석한 학생도 모든 재적 학생과 함께 한 번씩 배치해야 합니다.</p>${options.remote ? '<p class="notice">서버 명렬은 이 화면에서 조회하지 않습니다. 이름은 원본 대조용으로만 표시하고 전송하지 않습니다. 등록 여부·전체 명렬·현재 버전은 제출 서버가 검증합니다.</p>' : ''}<p id="pdf-detected"></p><div id="pdf-warnings" class="notice warning"></div><div class="pdf-controls"><label>원본 교탁 방향<select id="pdf-board"><option value="">방향 확인 필요</option><option value="top">위쪽</option><option value="bottom">아래쪽 (이중 회전 없음)</option></select></label><button id="pdf-manual" type="button">격자 조정 (입력 유지)</button><button id="pdf-overlay-toggle" type="button">입력 격자 숨기기 / 보기</button></div><details id="pdf-manual-options"><summary>격자 크기 · 원본 위 위치 조정</summary><p>행·열은 통로를 포함합니다. 크기를 바꿔도 입력은 유지됩니다. 크기 적용은 아래·오른쪽을 늘리거나 줄이며, 번호·이름·공간 설정이 있는 칸은 줄일 수 없습니다. 위·왼쪽에 넣으려면 방향별 추가 버튼을 사용하세요.</p><div class="pdf-controls"><label>행<input id="pdf-rows" type="number" min="1" max="30" value="${draft.rows}"></label><label>열 (통로 포함)<input id="pdf-cols" type="number" min="1" max="30" value="${draft.cols}"></label><button type="button" id="pdf-resize">격자 크기 적용 (입력 유지)</button>${[['left', '왼쪽', 8], ['top', '위쪽', 25], ['width', '너비', 84], ['height', '높이', 48]].map(([id, label, value]) => `<label>${label} %<input data-bound="${id}" type="number" min="0" max="100" value="${value}"></label>`).join('')}</div><div class="pdf-controls" role="group" aria-label="행·열 추가 방향"><button type="button" data-add-edge="top">↑ 위에 행 추가</button><button type="button" data-add-edge="bottom">↓ 아래에 행 추가</button><button type="button" data-add-edge="left">← 왼쪽에 열 추가</button><button type="button" data-add-edge="right">→ 오른쪽에 열 추가</button></div><p id="pdf-grid-status" role="status" aria-live="polite"></p></details><div class="pdf-scroll"><div class="pdf-paper"><canvas id="pdf-canvas" aria-label="선택한 PDF 원본"></canvas><div id="pdf-overlay"></div></div></div><h3>추출 내용 수정</h3><p>번호를 비우면 빈 책상입니다. 이름이 다른 경우 원본·명렬을 확인한 뒤 수정하세요. 추출 결과는 아직 자리표에 반영되지 않았습니다.</p><div class="pdf-table-wrap"><table><thead><tr><th>원본 좌표</th><th>공간</th><th>개인 번호 / 전체 학번</th><th>PDF 이름 확인</th><th>등록 학번 · 이름</th></tr></thead><tbody id="pdf-cells"></tbody></table></div><div id="pdf-errors" class="notice warning" role="status"></div><label class="pdf-confirm"><input type="checkbox" id="pdf-confirm"> 원본의 학급·전체 자리·빈자리·통로·교탁 방향과 추출 경고를 모두 대조했습니다</label><div class="dialog-actions"><button class="primary" id="pdf-next" disabled>${escape(options.continueLabel ?? '교사 검토함으로 보내기')}</button></div>`;
     document.body.append(dialog);
     dialog.showModal();
     const q = (s) => dialog.querySelector(s);
@@ -63,12 +64,28 @@ export async function reviewPdfFile(file, context, options = {}) {
     } };
     board.onchange = () => check(true);
     confirm.onchange = () => check();
-    function manual() { const r = Number(q('#pdf-rows').value), c = Number(q('#pdf-cols').value); if (!Number.isInteger(r) || !Number.isInteger(c) || r < 1 || c < 1 || r > 30 || c > 30) {
-        q('#pdf-errors').textContent = '행과 열은 1~30 사이 정수로 입력하세요.';
-        return;
-    } draft = { ...draft, sourceGrid: undefined, rows: r, cols: c, seatColumns: c, scanned: true, issues: ['자동 OCR을 사용하지 않았습니다. 모든 번호를 원본에서 직접 입력하고 확인하세요.'], cells: Array.from({ length: r * c }, (_, i) => ({ row: Math.floor(i / c) + 1, col: i % c + 1, kind: 'desk', rawNumber: '', name: '' })) }; rows(); q('#pdf-manual-options').open = true; }
-    q('#pdf-manual').onclick = manual;
-    q('#pdf-resize').onclick = manual;
+    function editGrid(change) {
+        const status = q('#pdf-grid-status');
+        try {
+            const updated = change();
+            const changed = updated !== draft;
+            draft = updated;
+            q('#pdf-rows').value = String(draft.rows);
+            q('#pdf-cols').value = String(draft.cols);
+            if (changed) rows();
+            status.textContent = changed ? `${draft.rows}행 × ${draft.cols}열로 변경했습니다. 기존 입력은 유지됩니다. 입력칸 위치를 원본에 다시 맞추고 전체 배치를 확인하세요.` : '같은 크기입니다. 기존 입력과 위치를 유지했습니다.';
+            status.dataset.state = 'ok';
+        } catch (error) {
+            status.textContent = error.message;
+            status.dataset.state = 'error';
+        }
+        q('#pdf-manual-options').open = true;
+    }
+    q('#pdf-manual').onclick = () => { q('#pdf-manual-options').open = true; };
+    q('#pdf-resize').onclick = () => editGrid(() => resizePdfGrid(draft, Number(q('#pdf-rows').value), Number(q('#pdf-cols').value)));
+    dialog.querySelectorAll('[data-add-edge]').forEach(button => {
+        button.onclick = () => editGrid(() => addPdfGridEdge(draft, button.dataset.addEdge));
+    });
     q('#pdf-overlay-toggle').onclick = () => { q('#pdf-overlay').hidden = !q('#pdf-overlay').hidden; };
     return new Promise((resolve, reject) => {
         let done = false;

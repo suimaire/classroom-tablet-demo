@@ -1,7 +1,7 @@
 import {CloudAPI,friendly} from './api.js';
 import {authEmail,uuid,safeSnapshot,validateDraft,receiptMessage,SubmissionState} from './model.js';
 import {parseSubmissionJson,parseSubmissionXlsx} from './submission-input.js';
-import {reviewPdfFile,reviewImageFile} from './pdf-review.js?v=20261007-image-import-1';
+import {reviewPdfFile,reviewImageFile} from './pdf-review.js?v=20261008-grid-preserve-1';
 import {detectSeatFile} from './file-input.js?v=20261007-image-import-1';
 const api=new CloudAPI(),state=new SubmissionState(),$=id=>document.getElementById(id),h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let logged=false,claimed='',working=false,epoch=0,authBusy=false,pdfAbort=null,selectedFile=null,manualBackup=null,manualMode=false,deskUndo=null;

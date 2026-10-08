@@ -71,7 +71,7 @@ function layoutView(){if(!admin())return;draft??=fromSnapshot(snapshot);layoutTa
  const target={...layoutTarget};assertLayoutTarget(target);
  const students=structuredClone(snapshot.students),classLabel=course.grade&&course.classNumber?`${course.grade}학년 ${course.classNumber}${course.section??''}반`:course.name;
  const controller=new AbortController();pdfAbort?.abort();pdfAbort=controller;
- try{const {reviewPdfFile}=await import('./pdf-review.js?v=20261004-admin-pdf-1');if(controller.signal.aborted)return;assertLayoutTarget(target);
+ try{const {reviewPdfFile}=await import('./pdf-review.js?v=20261008-grid-preserve-1');if(controller.signal.aborted)return;assertLayoutTarget(target);
  const result=await reviewPdfFile(files[0],{classLabel,version:target.version,roster:students},{signal:controller.signal,continueLabel:'편집 화면에서 최종 검토'});
  if(controller.signal.aborted||!result)return;assertLayoutTarget(target);validateLayout(result,students);
  draft=result;draftSubmission=null;layoutTarget=target;layoutView();notice('PDF 배치를 불러왔습니다. 아직 저장되지 않았습니다. 대조·수정 후 현재 자리표로 확정하세요.');

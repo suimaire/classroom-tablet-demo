@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {dirname, join} from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const files = [
+  "shared/pdf-grid.js",
   "admin/THIRD-PARTY-LICENSES.txt",
   "admin/api.js",
   "admin/app.js",
