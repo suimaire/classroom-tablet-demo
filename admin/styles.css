@@ -310,11 +310,12 @@ button.chip.missing:hover{background:#ffe7b3}
  .teacher-phone-layout .teacher-summary{white-space:nowrap}
  .teacher-phone-layout .teacher-popover{position:fixed;top:max(42px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));max-height:calc(100dvh - 56px);overflow:auto}
 }
-/* Native date controls must be allowed to shrink inside iPad flex/grid tracks. */
+/* iOS's native date theme overrides border-box for percentage widths (WebKit
+   301648). Disable that appearance pass, retaining the native date picker. */
 .history-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) max-content;align-items:end;gap:12px}
 .history-filters>label{min-width:0;max-width:100%;margin:10px 0}
-.history-filters input[type=date]{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px}
-.history-filters input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:left}
+.history-filters input[type=date]{-webkit-appearance:none;appearance:none;display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px}
+.history-filters input[type=date]::-webkit-date-and-time-value{min-width:0;min-height:1.5em;text-align:left}
 .history-filters>button{margin-bottom:10px;max-width:100%}
 @media(max-width:800px){.history-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.history-filters>button{grid-column:1/-1;justify-self:start;margin:0}.history-filters>label{margin-bottom:0}}
 @media(max-width:480px){.history-filters{grid-template-columns:minmax(0,1fr)}.history-filters>button{justify-self:stretch}}
